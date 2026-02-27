@@ -1,0 +1,10 @@
+{
+  "name": "university/job-portal",
+  "description": "University Online Job Application Portal (PHP 8 + MySQL)",
+  "type": "project",
+  "require": {
+    "php": ">=8.0",
+    "phpmailer/phpmailer": "^6.9"
+  }
+}
+
