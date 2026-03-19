@@ -37,19 +37,23 @@ $jobs = $stmt->fetchAll();
 require_once BASE_PATH . '/includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h1 class="h3 mb-0">Job Approvals</h1>
-        <div class="text-muted">Approve postings before they become visible to candidates.</div>
+        <h1><i class="bi bi-check-circle me-2"></i>Job Approvals</h1>
+        <p>Review and approve postings before they become visible to candidates.</p>
     </div>
-    <a class="btn btn-outline-secondary" href="<?php echo BASE_URL; ?>/management/dashboard.php">Back</a>
+    <div class="page-actions">
+        <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/management/dashboard.php">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
 </div>
 
 <?php if ($error): ?>
-    <div class="alert alert-danger"><?php echo escape($error); ?></div>
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> <?php echo escape($error); ?></div>
 <?php endif; ?>
 
-<div class="card">
+<div class="card animate-in">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table mb-0">
@@ -57,26 +61,32 @@ require_once BASE_PATH . '/includes/header.php';
                     <tr>
                         <th>Title</th>
                         <th>Department</th>
-                        <th>Posted by</th>
+                        <th>Posted By</th>
                         <th>Created</th>
                         <th class="text-end">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$jobs): ?>
-                        <tr><td colspan="5" class="text-muted">No pending approvals.</td></tr>
+                        <tr><td colspan="5" class="text-center py-5">
+                            <i class="bi bi-check-circle display-4 text-success d-block mb-3"></i>
+                            <h6 class="text-muted">All caught up!</h6>
+                            <p class="text-muted small">No pending approvals at the moment.</p>
+                        </td></tr>
                     <?php endif; ?>
                     <?php foreach ($jobs as $j): ?>
                         <tr>
-                            <td><?php echo escape($j['title']); ?></td>
-                            <td><?php echo escape($j['department'] ?? ''); ?></td>
+                            <td class="fw-bold"><?php echo escape($j['title']); ?></td>
+                            <td class="text-muted"><?php echo escape($j['department'] ?? '-'); ?></td>
                             <td class="text-muted"><?php echo escape($j['posted_by_name'] ?? ''); ?></td>
                             <td class="text-muted"><?php echo escape(date('M j, Y', strtotime($j['created_at']))); ?></td>
                             <td class="text-end">
                                 <form method="post" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
                                     <input type="hidden" name="job_id" value="<?php echo (int)$j['job_id']; ?>">
-                                    <button class="btn btn-sm btn-success" type="submit">Approve</button>
+                                    <button class="btn btn-sm btn-primary" type="submit" style="background: linear-gradient(135deg, #059669, #14b8a6); border: none;">
+                                        <i class="bi bi-check-lg me-1"></i> Approve
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -88,4 +98,3 @@ require_once BASE_PATH . '/includes/header.php';
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
-

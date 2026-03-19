@@ -21,23 +21,41 @@ $stmt->execute([$candidateId]);
 $apps = $stmt->fetchAll();
 
 require_once BASE_PATH . '/includes/header.php';
+
+function statusBadgeClass($status) {
+    $map = [
+        'Pending' => 'status-pending',
+        'Under Review' => 'status-under-review',
+        'Shortlisted' => 'status-shortlisted',
+        'Interview Scheduled' => 'status-interview',
+        'Rejected' => 'status-rejected',
+        'Offer Extended' => 'status-offer',
+        'Accepted' => 'status-accepted',
+        'Withdrawn' => 'status-withdrawn',
+    ];
+    return $map[$status] ?? 'status-pending';
+}
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h1 class="h3 mb-0">My Applications</h1>
-        <div class="text-muted">All applications you’ve submitted.</div>
+        <h1><i class="bi bi-file-earmark-text me-2"></i>My Applications</h1>
+        <p>Track all your submitted applications and their status.</p>
     </div>
-    <a class="btn btn-primary" href="<?php echo BASE_URL; ?>/index.php">Apply to a Job</a>
+    <div class="page-actions">
+        <a class="btn btn-light btn-sm text-primary fw-bold" href="<?php echo BASE_URL; ?>/index.php">
+            <i class="bi bi-plus-circle me-1"></i> Apply to a Job
+        </a>
+    </div>
 </div>
 
-<div class="card">
+<div class="card animate-in">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table mb-0">
                 <thead>
                     <tr>
-                        <th>Job</th>
+                        <th>Job Title</th>
                         <th>Department</th>
                         <th>Location</th>
                         <th>Status</th>
@@ -46,14 +64,27 @@ require_once BASE_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (!$apps): ?>
-                        <tr><td colspan="5" class="text-muted">No applications yet.</td></tr>
+                        <tr><td colspan="5" class="text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                            <h6 class="text-muted">No applications yet</h6>
+                            <p class="text-muted small mb-3">Start exploring available positions and apply today!</p>
+                            <a href="<?php echo BASE_URL; ?>/index.php" class="btn btn-primary btn-sm">
+                                <i class="bi bi-search me-1"></i> Browse Jobs
+                            </a>
+                        </td></tr>
                     <?php endif; ?>
                     <?php foreach ($apps as $a): ?>
                         <tr>
-                            <td><?php echo escape($a['title']); ?></td>
-                            <td><?php echo escape($a['department'] ?? ''); ?></td>
-                            <td><?php echo escape($a['location'] ?? ''); ?></td>
-                            <td><span class="badge bg-light text-dark border"><?php echo escape($a['status']); ?></span></td>
+                            <td class="fw-semibold"><?php echo escape($a['title']); ?></td>
+                            <td class="text-muted"><?php echo escape($a['department'] ?? '-'); ?></td>
+                            <td class="text-muted">
+                                <?php if (!empty($a['location'])): ?>
+                                    <i class="bi bi-geo-alt me-1" style="color: #02FFFD"></i><?php echo escape($a['location']); ?>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td><span class="status-badge <?php echo statusBadgeClass($a['status']); ?>"><?php echo escape($a['status']); ?></span></td>
                             <td class="text-muted"><?php echo escape(date('M j, Y', strtotime($a['applied_at']))); ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -64,4 +95,3 @@ require_once BASE_PATH . '/includes/header.php';
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
-

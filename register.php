@@ -54,53 +54,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require_once BASE_PATH . '/includes/header.php';
 ?>
 
-<div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-6">
-        <div class="card">
-            <div class="card-body">
-                <h1 class="h4 mb-3">Create Candidate Account</h1>
-
-                <?php if ($error): ?>
-                    <div class="alert alert-danger"><?php echo escape($error); ?></div>
-                <?php endif; ?>
-
-                <form method="post" class="row g-3">
-                    <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
-
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">First Name</label>
-                        <input type="text" name="first_name" class="form-control" required>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" name="last_name" class="form-control" required>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" required autocomplete="email">
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">Phone</label>
-                        <input type="text" name="phone" class="form-control" required>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" required minlength="8" autocomplete="new-password">
-                        <div class="form-text">Minimum 8 characters.</div>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Confirm Password</label>
-                        <input type="password" name="confirm_password" class="form-control" required minlength="8" autocomplete="new-password">
-                    </div>
-                    <div class="col-12">
-                        <button class="btn btn-primary" type="submit">Register</button>
-                        <span class="ms-2 small text-muted">Already have an account? <a href="<?php echo BASE_URL; ?>/login.php">Login</a></span>
-                    </div>
-                </form>
+<div class="register-page py-3">
+    <div class="register-card">
+        <div class="register-header">
+            <div class="mb-2">
+                <i class="bi bi-person-plus-fill display-6"></i>
             </div>
+            <h1>Candidate Registration</h1>
+            <p>Create your account to start applying for jobs</p>
+        </div>
+
+        <div class="register-body">
+            <?php if ($error): ?>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle me-1"></i> <?php echo escape($error); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" class="row g-3">
+                <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
+
+                <div class="col-12">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2" style="border-bottom: 2px solid #e8e8e8;">
+                        <span style="background: #2e37a4; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 600;">1</span>
+                        <span class="fw-semibold" style="color: #2e37a4;">Personal Information</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
+                        <input type="text" name="first_name" class="form-control" placeholder="Enter first name" required
+                               value="<?php echo escape($_POST['first_name'] ?? ''); ?>">
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
+                        <input type="text" name="last_name" class="form-control" placeholder="Enter last name" required
+                               value="<?php echo escape($_POST['last_name'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
+                        <input type="email" name="email" class="form-control" placeholder="you@example.com" required autocomplete="email"
+                               value="<?php echo escape($_POST['email'] ?? ''); ?>">
+                    </div>
+                    <div class="form-text">Used for job alerts and application updates.</div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
+                        <input type="text" name="phone" class="form-control" placeholder="Include country code" required
+                               value="<?php echo escape($_POST['phone'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2" style="border-bottom: 2px solid #e8e8e8;">
+                        <span style="background: #2e37a4; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 600;">2</span>
+                        <span class="fw-semibold" style="color: #2e37a4;">Account Security</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required minlength="8" autocomplete="new-password">
+                    </div>
+                    <div class="form-text">Use a mix of letters, numbers, and symbols.</div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-lock-fill"></i></span>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Re-enter your password" required minlength="8" autocomplete="new-password">
+                    </div>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <div class="d-flex flex-column flex-sm-row gap-3 align-items-sm-center justify-content-between">
+                        <button class="btn btn-primary btn-lg" type="submit">
+                            <i class="bi bi-person-plus me-1"></i> Create Account
+                        </button>
+                        <span class="text-muted">
+                            Already have an account?
+                            <a href="<?php echo BASE_URL; ?>/login.php" class="fw-semibold">Login</a>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="text-center mt-2">
+                        <a href="<?php echo BASE_URL; ?>/index.php" class="small text-muted">
+                            <i class="bi bi-arrow-left me-1"></i> Return to home page
+                        </a>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
-

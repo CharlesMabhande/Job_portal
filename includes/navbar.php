@@ -1,71 +1,76 @@
 <?php
 /**
- * Shared navbar (role-aware).
+ * Floating navbar (Mutare-style, role-aware).
  */
 $roleId = $_SESSION['role_id'] ?? null;
 $isLoggedIn = isset($_SESSION['user_id']);
 
-function navItem($href, $label) {
+function navItem($href, $label, $icon = '') {
     $url = BASE_URL . $href;
-    echo '<li class="nav-item"><a class="nav-link" href="' . escape($url) . '">' . escape($label) . '</a></li>';
+    $iconHtml = $icon ? '<i class="' . $icon . ' me-1"></i>' : '';
+    echo '<li class="nav-item"><a class="nav-link" href="' . escape($url) . '">' . $iconHtml . escape($label) . '</a></li>';
 }
 ?>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand fw-semibold" href="<?php echo BASE_URL; ?>/index.php">University Job Portal</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<div class="jp-nav-wrap">
+    <nav class="navbar navbar-expand-lg jp-navbar">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="<?php echo BASE_URL; ?>/index.php">
+                <i class="fa-solid fa-briefcase"></i>
+                University Job Portal
+            </a>
 
-        <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <?php navItem('/index.php', 'Jobs'); ?>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-                <?php if ($isLoggedIn && (int)$roleId === 1): ?>
-                    <?php navItem('/candidate/dashboard.php', 'Dashboard'); ?>
-                    <?php navItem('/candidate/applications.php', 'My Applications'); ?>
-                    <?php navItem('/candidate/profile.php', 'Profile'); ?>
-                <?php elseif ($isLoggedIn && (int)$roleId === 2): ?>
-                    <?php navItem('/hr/dashboard.php', 'HR Dashboard'); ?>
-                    <?php navItem('/hr/jobs.php', 'Jobs'); ?>
-                    <?php navItem('/hr/applications.php', 'Applications'); ?>
-                    <?php navItem('/hr/interviews.php', 'Interviews'); ?>
-                <?php elseif ($isLoggedIn && (int)$roleId === 3): ?>
-                    <?php navItem('/management/dashboard.php', 'Management'); ?>
-                    <?php navItem('/management/jobs.php', 'Approvals'); ?>
-                <?php elseif ($isLoggedIn && (int)$roleId === 4): ?>
-                    <?php navItem('/admin/dashboard.php', 'SysAdmin'); ?>
-                    <?php navItem('/admin/users.php', 'Users'); ?>
-                    <?php navItem('/admin/settings.php', 'Settings'); ?>
-                    <?php navItem('/admin/logs.php', 'Audit Logs'); ?>
-                <?php endif; ?>
-            </ul>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <?php navItem('/index.php', 'Jobs', 'fa-solid fa-magnifying-glass'); ?>
 
-            <ul class="navbar-nav ms-auto">
-                <?php if ($isLoggedIn): ?>
-                    <li class="nav-item">
-                        <span class="navbar-text me-2">
+                    <?php if ($isLoggedIn && (int)$roleId === 1): ?>
+                        <?php navItem('/candidate/dashboard.php', 'Dashboard', 'fa-solid fa-gauge-high'); ?>
+                        <?php navItem('/candidate/applications.php', 'My Applications', 'fa-solid fa-file-lines'); ?>
+                        <?php navItem('/candidate/profile.php', 'Profile', 'fa-solid fa-user'); ?>
+                    <?php elseif ($isLoggedIn && (int)$roleId === 2): ?>
+                        <?php navItem('/hr/dashboard.php', 'HR Dashboard', 'fa-solid fa-gauge-high'); ?>
+                        <?php navItem('/hr/jobs.php', 'Manage Jobs', 'fa-solid fa-briefcase'); ?>
+                        <?php navItem('/hr/applications.php', 'Applications', 'fa-solid fa-file-lines'); ?>
+                        <?php navItem('/hr/interviews.php', 'Interviews', 'fa-solid fa-calendar-check'); ?>
+                    <?php elseif ($isLoggedIn && (int)$roleId === 3): ?>
+                        <?php navItem('/management/dashboard.php', 'Management', 'fa-solid fa-gauge-high'); ?>
+                        <?php navItem('/management/jobs.php', 'Approvals', 'fa-solid fa-circle-check'); ?>
+                    <?php elseif ($isLoggedIn && (int)$roleId === 4): ?>
+                        <?php navItem('/admin/dashboard.php', 'SysAdmin', 'fa-solid fa-gear'); ?>
+                        <?php navItem('/admin/users.php', 'Users', 'fa-solid fa-users'); ?>
+                        <?php navItem('/admin/settings.php', 'Settings', 'fa-solid fa-sliders'); ?>
+                        <?php navItem('/admin/logs.php', 'Audit Logs', 'fa-solid fa-scroll'); ?>
+                    <?php endif; ?>
+                </ul>
+
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <?php if ($isLoggedIn): ?>
+                        <span class="user-badge">
+                            <i class="fa-solid fa-circle-user me-1"></i>
                             <?php echo escape(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')); ?>
-                            (<?php echo escape($_SESSION['role_name'] ?? ''); ?>)
+                            <span class="opacity-75">(<?php echo escape($_SESSION['role_name'] ?? ''); ?>)</span>
                         </span>
-                    </li>
-                    <li class="nav-item me-2">
-                        <a class="btn btn-sm btn-outline-light" href="<?php echo BASE_URL; ?>/change_password.php">Change Password</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-outline-light" href="<?php echo BASE_URL; ?>/logout.php">Logout</a>
-                    </li>
-                <?php else: ?>
-                    <li class="nav-item me-2">
-                        <a class="btn btn-sm btn-outline-light" href="<?php echo BASE_URL; ?>/login.php">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-light" href="<?php echo BASE_URL; ?>/register.php">Register</a>
-                    </li>
-                <?php endif; ?>
-            </ul>
+                        <a class="btn btn-sm btn-outline-primary" href="<?php echo BASE_URL; ?>/change_password.php">
+                            <i class="fa-solid fa-key me-1"></i> Password
+                        </a>
+                        <a class="btn btn-sm btn-outline-danger" href="<?php echo BASE_URL; ?>/logout.php">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                        </a>
+                    <?php else: ?>
+                        <a class="btn btn-sm btn-outline-primary" href="<?php echo BASE_URL; ?>/login.php">
+                            <i class="fa-solid fa-right-to-bracket me-1"></i> Login
+                        </a>
+                        <a class="btn btn-sm btn-primary text-white" href="<?php echo BASE_URL; ?>/register.php">
+                            <i class="fa-solid fa-user-plus me-1"></i> Register
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
-    </div>
-</nav>
-
+    </nav>
+</div>

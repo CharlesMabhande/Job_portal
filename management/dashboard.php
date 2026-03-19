@@ -12,25 +12,43 @@ $apps    = (int)($db->query("SELECT COUNT(*) AS c FROM applications")->fetch()['
 require_once BASE_PATH . '/includes/header.php';
 ?>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h1 class="h3 mb-0">Management Dashboard</h1>
-        <div class="text-muted">Approve job postings and oversee hiring decisions.</div>
+        <h1><i class="bi bi-bar-chart-line me-2"></i>Management Dashboard</h1>
+        <p>Approve job postings and oversee hiring decisions.</p>
     </div>
-    <a class="btn btn-primary" href="<?php echo BASE_URL; ?>/management/jobs.php">Review Approvals</a>
+    <div class="page-actions">
+        <a class="btn btn-light btn-sm text-primary fw-bold" href="<?php echo BASE_URL; ?>/management/jobs.php">
+            <i class="bi bi-check-circle me-1"></i> Review Approvals
+        </a>
+    </div>
 </div>
 
 <div class="row g-3">
-    <div class="col-6 col-lg-4"><div class="card"><div class="card-body">
-        <div class="text-muted small">Pending Approvals</div><div class="h4 mb-0"><?php echo $pending; ?></div>
-    </div></div></div>
-    <div class="col-6 col-lg-4"><div class="card"><div class="card-body">
-        <div class="text-muted small">Active Jobs</div><div class="h4 mb-0"><?php echo $active; ?></div>
-    </div></div></div>
-    <div class="col-6 col-lg-4"><div class="card"><div class="card-body">
-        <div class="text-muted small">Total Applications</div><div class="h4 mb-0"><?php echo $apps; ?></div>
-    </div></div></div>
+    <div class="col-6 col-lg-4">
+        <div class="stat-card-rich">
+            <div class="stat-accent amber"></div>
+            <div class="stat-icon amber"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-value"><?php echo $pending; ?></div>
+            <div class="stat-label">Pending Approvals</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-4">
+        <div class="stat-card-rich">
+            <div class="stat-accent green"></div>
+            <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="stat-value"><?php echo $active; ?></div>
+            <div class="stat-label">Active Jobs</div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="stat-card-rich">
+            <div class="stat-accent blue"></div>
+            <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-value"><?php echo $apps; ?></div>
+            <div class="stat-label">Total Applications</div>
+        </div>
+    </div>
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
-

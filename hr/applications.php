@@ -69,29 +69,47 @@ $stmt->execute($params);
 $apps = $stmt->fetchAll();
 
 require_once BASE_PATH . '/includes/header.php';
+
+function statusBadgeClass($status) {
+    $map = [
+        'Pending' => 'status-pending',
+        'Under Review' => 'status-under-review',
+        'Shortlisted' => 'status-shortlisted',
+        'Interview Scheduled' => 'status-interview',
+        'Rejected' => 'status-rejected',
+        'Offer Extended' => 'status-offer',
+        'Accepted' => 'status-accepted',
+        'Withdrawn' => 'status-withdrawn',
+    ];
+    return $map[$status] ?? 'status-pending';
+}
 ?>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h1 class="h3 mb-0">Applications</h1>
-        <div class="text-muted">Review candidates and update statuses.</div>
+        <h1><i class="bi bi-file-earmark-check me-2"></i>Applications</h1>
+        <p>Review candidates and update application statuses.</p>
     </div>
-    <form method="get" class="d-flex gap-2">
-        <select class="form-select" name="status">
-            <option value="">All statuses</option>
-            <?php foreach (['Pending','Under Review','Shortlisted','Interview Scheduled','Rejected','Offer Extended','Accepted','Withdrawn'] as $s): ?>
-                <option value="<?php echo escape($s); ?>" <?php echo $statusFilter === $s ? 'selected' : ''; ?>><?php echo escape($s); ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button class="btn btn-outline-secondary" type="submit">Filter</button>
-    </form>
+    <div class="page-actions">
+        <form method="get" class="d-flex gap-2">
+            <select class="form-select form-select-sm" name="status" style="min-width: 170px; border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.15); color: #fff;">
+                <option value="" style="color: #333;">All statuses</option>
+                <?php foreach (['Pending','Under Review','Shortlisted','Interview Scheduled','Rejected','Offer Extended','Accepted','Withdrawn'] as $s): ?>
+                    <option value="<?php echo escape($s); ?>" <?php echo $statusFilter === $s ? 'selected' : ''; ?> style="color: #333;"><?php echo escape($s); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button class="btn btn-light btn-sm text-primary fw-bold" type="submit">
+                <i class="bi bi-funnel me-1"></i> Filter
+            </button>
+        </form>
+    </div>
 </div>
 
 <?php if ($error): ?>
-    <div class="alert alert-danger"><?php echo escape($error); ?></div>
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> <?php echo escape($error); ?></div>
 <?php endif; ?>
 
-<div class="card">
+<div class="card animate-in">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table mb-0">
@@ -101,37 +119,42 @@ require_once BASE_PATH . '/includes/header.php';
                         <th>Job</th>
                         <th>Status</th>
                         <th>Applied</th>
-                        <th class="text-end">Update</th>
+                        <th class="text-end">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$apps): ?>
-                        <tr><td colspan="5" class="text-muted">No applications found.</td></tr>
+                        <tr><td colspan="5" class="text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                            <h6 class="text-muted">No applications found</h6>
+                        </td></tr>
                     <?php endif; ?>
                     <?php foreach ($apps as $a): ?>
                         <tr>
                             <td>
-                                <div class="fw-semibold"><?php echo escape($a['first_name'] . ' ' . $a['last_name']); ?></div>
-                                <div class="small text-muted"><?php echo escape($a['email']); ?></div>
+                                <div class="fw-bold"><?php echo escape($a['first_name'] . ' ' . $a['last_name']); ?></div>
+                                <div class="small text-muted"><i class="bi bi-envelope me-1"></i><?php echo escape($a['email']); ?></div>
                             </td>
                             <td>
                                 <div class="fw-semibold"><?php echo escape($a['job_title']); ?></div>
                                 <div class="small text-muted"><?php echo escape($a['department'] ?? ''); ?></div>
                             </td>
-                            <td><span class="badge bg-light text-dark border"><?php echo escape($a['status']); ?></span></td>
+                            <td><span class="status-badge <?php echo statusBadgeClass($a['status']); ?>"><?php echo escape($a['status']); ?></span></td>
                             <td class="text-muted"><?php echo escape(date('M j, Y', strtotime($a['applied_at']))); ?></td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#u<?php echo (int)$a['application_id']; ?>">Update</button>
+                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#u<?php echo (int)$a['application_id']; ?>">
+                                    <i class="bi bi-pencil-square me-1"></i> Update
+                                </button>
                             </td>
                         </tr>
                         <tr class="collapse" id="u<?php echo (int)$a['application_id']; ?>">
-                            <td colspan="5">
-                                <form method="post" class="row g-2 align-items-end">
+                            <td colspan="5" style="background: #f4f6fb; border-radius: 12px;">
+                                <form method="post" class="row g-2 align-items-end p-2">
                                     <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
                                     <input type="hidden" name="application_id" value="<?php echo (int)$a['application_id']; ?>">
 
                                     <div class="col-12 col-md-3">
-                                        <label class="form-label small">Status</label>
+                                        <label class="form-label small fw-bold">New Status</label>
                                         <select class="form-select form-select-sm" name="status" required>
                                             <?php foreach (['Under Review','Shortlisted','Interview Scheduled','Rejected','Offer Extended'] as $s): ?>
                                                 <option value="<?php echo escape($s); ?>"><?php echo escape($s); ?></option>
@@ -139,15 +162,17 @@ require_once BASE_PATH . '/includes/header.php';
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-4">
-                                        <label class="form-label small">Notes</label>
+                                        <label class="form-label small fw-bold">Notes</label>
                                         <input class="form-control form-control-sm" name="notes" placeholder="Internal notes (optional)">
                                     </div>
                                     <div class="col-12 col-md-3">
-                                        <label class="form-label small">Rejection reason</label>
-                                        <input class="form-control form-control-sm" name="rejection_reason" placeholder="If rejected">
+                                        <label class="form-label small fw-bold">Rejection Reason</label>
+                                        <input class="form-control form-control-sm" name="rejection_reason" placeholder="If rejecting">
                                     </div>
                                     <div class="col-12 col-md-2 text-md-end">
-                                        <button class="btn btn-sm btn-primary" type="submit">Save</button>
+                                        <button class="btn btn-sm btn-primary w-100" type="submit">
+                                            <i class="bi bi-check-lg me-1"></i> Save
+                                        </button>
                                     </div>
                                 </form>
                             </td>
@@ -160,4 +185,3 @@ require_once BASE_PATH . '/includes/header.php';
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
-

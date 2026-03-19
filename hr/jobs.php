@@ -15,17 +15,32 @@ $stmt->execute();
 $jobs = $stmt->fetchAll();
 
 require_once BASE_PATH . '/includes/header.php';
+
+function jobStatusClass($status) {
+    $map = [
+        'Draft' => 'status-draft',
+        'Pending Approval' => 'status-pending',
+        'Active' => 'status-active',
+        'Closed' => 'status-withdrawn',
+        'Cancelled' => 'status-rejected',
+    ];
+    return $map[$status] ?? 'status-draft';
+}
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h1 class="h3 mb-0">Jobs</h1>
-        <div class="text-muted">Create, edit, and submit jobs for management approval.</div>
+        <h1><i class="bi bi-briefcase me-2"></i>Manage Jobs</h1>
+        <p>Create, edit, and submit jobs for management approval.</p>
     </div>
-    <a class="btn btn-primary" href="<?php echo BASE_URL; ?>/hr/job_edit.php">Create Job</a>
+    <div class="page-actions">
+        <a class="btn btn-light btn-sm text-primary fw-bold" href="<?php echo BASE_URL; ?>/hr/job_edit.php">
+            <i class="bi bi-plus-circle me-1"></i> Create Job
+        </a>
+    </div>
 </div>
 
-<div class="card">
+<div class="card animate-in">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table mb-0">
@@ -41,17 +56,23 @@ require_once BASE_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (!$jobs): ?>
-                        <tr><td colspan="6" class="text-muted">No jobs yet.</td></tr>
+                        <tr><td colspan="6" class="text-center py-5">
+                            <i class="bi bi-briefcase display-4 text-muted d-block mb-3"></i>
+                            <h6 class="text-muted">No jobs yet</h6>
+                            <p class="text-muted small">Create your first job posting to get started.</p>
+                        </td></tr>
                     <?php endif; ?>
                     <?php foreach ($jobs as $j): ?>
                         <tr>
-                            <td><?php echo escape($j['title']); ?></td>
-                            <td><?php echo escape($j['department'] ?? ''); ?></td>
-                            <td><span class="badge bg-light text-dark border"><?php echo escape($j['status']); ?></span></td>
+                            <td class="fw-semibold"><?php echo escape($j['title']); ?></td>
+                            <td class="text-muted"><?php echo escape($j['department'] ?? '-'); ?></td>
+                            <td><span class="status-badge <?php echo jobStatusClass($j['status']); ?>"><?php echo escape($j['status']); ?></span></td>
                             <td class="text-muted"><?php echo escape($j['posted_by_name'] ?? ''); ?></td>
                             <td class="text-muted"><?php echo escape(date('M j, Y', strtotime($j['created_at']))); ?></td>
                             <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary" href="<?php echo BASE_URL; ?>/hr/job_edit.php?job_id=<?php echo (int)$j['job_id']; ?>">Edit</a>
+                                <a class="btn btn-sm btn-outline-primary" href="<?php echo BASE_URL; ?>/hr/job_edit.php?job_id=<?php echo (int)$j['job_id']; ?>">
+                                    <i class="bi bi-pencil me-1"></i> Edit
+                                </a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -62,4 +83,3 @@ require_once BASE_PATH . '/includes/header.php';
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
-

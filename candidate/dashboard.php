@@ -35,54 +35,82 @@ $recentStmt->execute([$candidateId]);
 $recent = $recentStmt->fetchAll();
 
 require_once BASE_PATH . '/includes/header.php';
+
+function statusBadgeClass($status) {
+    $map = [
+        'Pending' => 'status-pending',
+        'Under Review' => 'status-under-review',
+        'Shortlisted' => 'status-shortlisted',
+        'Interview Scheduled' => 'status-interview',
+        'Rejected' => 'status-rejected',
+        'Offer Extended' => 'status-offer',
+        'Accepted' => 'status-accepted',
+        'Withdrawn' => 'status-withdrawn',
+    ];
+    return $map[$status] ?? 'status-pending';
+}
 ?>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h1 class="h3 mb-0">Welcome, <?php echo escape($_SESSION['first_name']); ?></h1>
-        <div class="text-muted">Track your applications and apply for new jobs.</div>
+        <h1><i class="bi bi-hand-wave me-2"></i>Welcome, <?php echo escape($_SESSION['first_name']); ?></h1>
+        <p>Track your applications and discover new career opportunities.</p>
     </div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary" href="<?php echo BASE_URL; ?>/index.php">Browse Jobs</a>
-        <a class="btn btn-primary" href="<?php echo BASE_URL; ?>/candidate/profile.php">Update Profile</a>
-    </div>
-</div>
-
-<div class="row g-3 mb-3">
-    <div class="col-6 col-lg-3">
-        <div class="card"><div class="card-body">
-            <div class="text-muted small">Pending</div>
-            <div class="h4 mb-0"><?php echo (int)($counts['pending'] ?? 0); ?></div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card"><div class="card-body">
-            <div class="text-muted small">Under Review</div>
-            <div class="h4 mb-0"><?php echo (int)($counts['under_review'] ?? 0); ?></div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card"><div class="card-body">
-            <div class="text-muted small">Shortlisted</div>
-            <div class="h4 mb-0"><?php echo (int)($counts['shortlisted'] ?? 0); ?></div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card"><div class="card-body">
-            <div class="text-muted small">Rejected</div>
-            <div class="h4 mb-0"><?php echo (int)($counts['rejected'] ?? 0); ?></div>
-        </div></div>
+    <div class="page-actions d-flex gap-2">
+        <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/index.php">
+            <i class="bi bi-search me-1"></i> Browse Jobs
+        </a>
+        <a class="btn btn-light btn-sm text-primary fw-bold" href="<?php echo BASE_URL; ?>/candidate/profile.php">
+            <i class="bi bi-person-gear me-1"></i> Update Profile
+        </a>
     </div>
 </div>
 
-<div class="card">
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card-rich">
+            <div class="stat-accent amber"></div>
+            <div class="stat-icon amber"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-value"><?php echo (int)($counts['pending'] ?? 0); ?></div>
+            <div class="stat-label">Pending</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card-rich">
+            <div class="stat-accent blue"></div>
+            <div class="stat-icon blue"><i class="bi bi-eye"></i></div>
+            <div class="stat-value"><?php echo (int)($counts['under_review'] ?? 0); ?></div>
+            <div class="stat-label">Under Review</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card-rich">
+            <div class="stat-accent green"></div>
+            <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+            <div class="stat-value"><?php echo (int)($counts['shortlisted'] ?? 0); ?></div>
+            <div class="stat-label">Shortlisted</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card-rich">
+            <div class="stat-accent red"></div>
+            <div class="stat-icon red"><i class="bi bi-x-circle"></i></div>
+            <div class="stat-value"><?php echo (int)($counts['rejected'] ?? 0); ?></div>
+            <div class="stat-label">Rejected</div>
+        </div>
+    </div>
+</div>
+
+<div class="card animate-in">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h2 class="h5 mb-0">Recent Applications</h2>
-            <a class="btn btn-sm btn-outline-secondary" href="<?php echo BASE_URL; ?>/candidate/applications.php">View all</a>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 mb-0"><i class="bi bi-clock-history me-2" style="color: #02FFFD"></i>Recent Applications</h2>
+            <a class="btn btn-sm btn-outline-primary" href="<?php echo BASE_URL; ?>/candidate/applications.php">
+                View all <i class="bi bi-arrow-right ms-1"></i>
+            </a>
         </div>
         <div class="table-responsive">
-            <table class="table table-sm mb-0">
+            <table class="table mb-0">
                 <thead>
                     <tr>
                         <th>Job</th>
@@ -93,13 +121,16 @@ require_once BASE_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (!$recent): ?>
-                        <tr><td colspan="4" class="text-muted">No applications yet.</td></tr>
+                        <tr><td colspan="4" class="text-center py-4">
+                            <i class="bi bi-inbox display-6 text-muted d-block mb-2"></i>
+                            <span class="text-muted">No applications yet. <a href="<?php echo BASE_URL; ?>/index.php">Start browsing jobs!</a></span>
+                        </td></tr>
                     <?php endif; ?>
                     <?php foreach ($recent as $row): ?>
                         <tr>
-                            <td><?php echo escape($row['title']); ?></td>
-                            <td><?php echo escape($row['department'] ?? ''); ?></td>
-                            <td><span class="badge bg-light text-dark border"><?php echo escape($row['status']); ?></span></td>
+                            <td class="fw-semibold"><?php echo escape($row['title']); ?></td>
+                            <td class="text-muted"><?php echo escape($row['department'] ?? '-'); ?></td>
+                            <td><span class="status-badge <?php echo statusBadgeClass($row['status']); ?>"><?php echo escape($row['status']); ?></span></td>
                             <td class="text-muted"><?php echo escape(date('M j, Y', strtotime($row['applied_at']))); ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -110,4 +141,3 @@ require_once BASE_PATH . '/includes/header.php';
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
-
