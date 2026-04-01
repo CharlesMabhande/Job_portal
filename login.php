@@ -5,7 +5,7 @@ if (isset($_SESSION['user_id'])) {
     redirect('/dashboard.php');
 }
 
-$pageTitle = 'Login - University Job Portal';
+$pageTitle = 'Login - Lupane State University Job Portal';
 $error = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -29,8 +29,9 @@ $appCssVersion = @filemtime(BASE_PATH . '/assets/css/app.css') ?: time();
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?php echo escape($pageTitle); ?></title>
+    <link rel="icon" type="image/png" href="<?php echo SITE_LOGO_URL; ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -44,9 +45,9 @@ $appCssVersion = @filemtime(BASE_PATH . '/assets/css/app.css') ?: time();
     <!-- Left: Branding -->
     <div class="login-branding">
         <div>
-            <div class="d-flex align-items-center gap-2 mb-4">
-                <i class="fa-solid fa-briefcase fs-2"></i>
-                <span class="fw-bold fs-5">University Job Portal</span>
+            <div class="login-branding-logo-wrap mb-4">
+                <img src="<?php echo SITE_LOGO_URL; ?>" class="login-brand-logo login-brand-logo--branding" alt="<?php echo escape(SITE_LOGO_ALT); ?>" decoding="async">
+                <span class="login-branding-title d-block mt-3 fw-bold fs-5">Lupane State University Job Portal</span>
             </div>
             <h2>Welcome back</h2>
             <p>Login to track your applications, manage your profile, and discover new career opportunities.</p>
@@ -63,9 +64,9 @@ $appCssVersion = @filemtime(BASE_PATH . '/assets/css/app.css') ?: time();
     <!-- Right: Login Form -->
     <div class="login-form-side">
         <div class="login-form-card">
-            <div class="text-center mb-4 d-md-none">
-                <i class="fa-solid fa-briefcase fs-1" style="color: #2e37a4;"></i>
-                <h5 class="mt-2" style="color: #2e37a4;">University Job Portal</h5>
+            <div class="text-center mb-4">
+                <img src="<?php echo SITE_LOGO_URL; ?>" class="login-brand-logo login-brand-logo--form mx-auto d-block mb-2" alt="<?php echo escape(SITE_LOGO_ALT); ?>" decoding="async">
+                <h5 class="mt-2 mb-0 d-md-none fw-semibold" style="color: #1a1a1a;">Lupane State University Job Portal</h5>
             </div>
 
             <h1>Sign In</h1>
@@ -91,7 +92,7 @@ $appCssVersion = @filemtime(BASE_PATH . '/assets/css/app.css') ?: time();
                     <label class="form-label fw-semibold">Email Address</label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="fa-solid fa-envelope"></i></span>
-                        <input type="email" name="email" class="form-control" placeholder="you@example.com" required autocomplete="email">
+                        <input type="email" name="email" class="form-control" placeholder="e.g. you@university.ac.zw or gmail.com" required autocomplete="email" title="Email you used when registering">
                     </div>
                 </div>
 
@@ -99,7 +100,7 @@ $appCssVersion = @filemtime(BASE_PATH . '/assets/css/app.css') ?: time();
                     <label class="form-label fw-semibold">Password</label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" name="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+                        <input type="password" name="password" class="form-control" placeholder="Enter your account password" required autocomplete="current-password" title="Same password you chose at registration">
                     </div>
                 </div>
 

@@ -26,12 +26,12 @@ $settings = $db->query("SELECT setting_key, setting_value, description, updated_
 require_once BASE_PATH . '/includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
+<div class="d-flex jp-page-toolbar justify-content-between align-items-center mb-3">
+    <div class="min-w-0">
         <h1 class="h3 mb-0">System Settings</h1>
-        <div class="text-muted">System-wide configuration (maintenance mode, file limits, etc.).</div>
+        <div class="text-muted small">System-wide configuration (maintenance mode, file limits, etc.).</div>
     </div>
-    <a class="btn btn-outline-secondary" href="<?php echo BASE_URL; ?>/admin/dashboard.php">Back</a>
+    <a class="btn btn-outline-secondary flex-shrink-0" href="<?php echo BASE_URL; ?>/admin/dashboard.php">Back</a>
 </div>
 
 <?php if ($error): ?>
@@ -67,7 +67,7 @@ require_once BASE_PATH . '/includes/header.php';
                                     <input type="hidden" name="setting_key" value="<?php echo escape($s['setting_key']); ?>">
                                     <div class="col-12 col-md-9">
                                         <label class="form-label small">Value</label>
-                                        <input class="form-control" name="setting_value" value="<?php echo escape((string)$s['setting_value']); ?>">
+                                        <input class="form-control" name="setting_value" value="<?php echo escape((string)$s['setting_value']); ?>" placeholder="<?php echo escape(settingValuePlaceholder($s['setting_key'])); ?>" title="<?php echo escape($s['description'] ?? ''); ?>">
                                     </div>
                                     <div class="col-12 col-md-3 text-md-end">
                                         <button class="btn btn-primary" type="submit">Save</button>

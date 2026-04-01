@@ -91,7 +91,7 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="card animate-in mb-4">
         <div class="card-body">
             <h5 class="mb-3 d-flex align-items-center gap-2">
-                <span style="background: linear-gradient(135deg, #2e37a4, #4f46e5); color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
+                <span style="background: #c61f26; color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
                     <i class="bi bi-info-circle"></i>
                 </span>
                 Basic Information
@@ -99,15 +99,15 @@ require_once BASE_PATH . '/includes/header.php';
             <div class="row g-3">
                 <div class="col-12">
                     <label class="form-label fw-semibold">Job Title <span class="text-danger">*</span></label>
-                    <input class="form-control" name="title" required value="<?php echo escape($job['title'] ?? ''); ?>" placeholder="e.g. Senior Software Engineer">
+                    <input class="form-control" name="title" required value="<?php echo escape($job['title'] ?? ''); ?>" placeholder="e.g. Senior Lecturer – Computer Science">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Department</label>
-                    <input class="form-control" name="department" value="<?php echo escape($job['department'] ?? ''); ?>" placeholder="e.g. IT Department">
+                    <input class="form-control" name="department" value="<?php echo escape($job['department'] ?? ''); ?>" placeholder="e.g. ICTS Department, Faculty of Science">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Location</label>
-                    <input class="form-control" name="location" value="<?php echo escape($job['location'] ?? ''); ?>" placeholder="e.g. Main Campus">
+                    <input class="form-control" name="location" value="<?php echo escape($job['location'] ?? ''); ?>" placeholder="e.g. Lupane Main Campus, Bulawayo liaison office">
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label fw-semibold">Job Type</label>
@@ -123,19 +123,19 @@ require_once BASE_PATH . '/includes/header.php';
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label fw-semibold">Salary Min</label>
-                    <input class="form-control" name="salary_min" type="number" step="0.01" value="<?php echo escape($job['salary_min'] ?? ''); ?>" placeholder="0.00">
+                    <input class="form-control" name="salary_min" type="number" step="0.01" value="<?php echo escape($job['salary_min'] ?? ''); ?>" placeholder="e.g. 1200.00 (USD/month)">
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label fw-semibold">Salary Max</label>
-                    <input class="form-control" name="salary_max" type="number" step="0.01" value="<?php echo escape($job['salary_max'] ?? ''); ?>" placeholder="0.00">
+                    <input class="form-control" name="salary_max" type="number" step="0.01" value="<?php echo escape($job['salary_max'] ?? ''); ?>" placeholder="e.g. 1800.00 (leave blank if negotiable)">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Application Deadline</label>
-                    <input class="form-control" name="application_deadline" type="date" value="<?php echo escape($job['application_deadline'] ?? ''); ?>">
+                    <input class="form-control" name="application_deadline" type="date" value="<?php echo escape($job['application_deadline'] ?? ''); ?>" title="Last date candidates may apply (YYYY-MM-DD)">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Max Applications (0 = unlimited)</label>
-                    <input class="form-control" name="max_applications" type="number" value="<?php echo escape($job['max_applications'] ?? 0); ?>">
+                    <input class="form-control" name="max_applications" type="number" value="<?php echo escape($job['max_applications'] ?? 0); ?>" placeholder="e.g. 50 (use 0 for no limit)" title="0 means unlimited applications">
                 </div>
             </div>
         </div>
@@ -144,7 +144,7 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="card animate-in mb-4" style="animation-delay: .1s;">
         <div class="card-body">
             <h5 class="mb-3 d-flex align-items-center gap-2">
-                <span style="background: linear-gradient(135deg, #059669, #14b8a6); color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
+                <span style="background: #E35D1E; color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
                     <i class="bi bi-file-text"></i>
                 </span>
                 Job Details
@@ -152,15 +152,15 @@ require_once BASE_PATH . '/includes/header.php';
             <div class="row g-3">
                 <div class="col-12">
                     <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
-                    <textarea class="form-control" name="description" rows="5" required placeholder="Describe the role, responsibilities, and expectations..."><?php echo escape($job['description'] ?? ''); ?></textarea>
+                    <textarea class="form-control" name="description" rows="5" required placeholder="Example: We seek a motivated professional to teach undergraduate courses, supervise projects, and support departmental research…"><?php echo escape($job['description'] ?? ''); ?></textarea>
                 </div>
                 <div class="col-12">
                     <label class="form-label fw-semibold">Requirements</label>
-                    <textarea class="form-control" name="requirements" rows="4" placeholder="List the key responsibilities and duties..."><?php echo escape($job['requirements'] ?? ''); ?></textarea>
+                    <textarea class="form-control" name="requirements" rows="4" placeholder="Example: • Deliver lectures and tutorials  • Prepare assessments  • Attend faculty meetings  • Maintain student records"><?php echo escape($job['requirements'] ?? ''); ?></textarea>
                 </div>
                 <div class="col-12">
                     <label class="form-label fw-semibold">Qualifications</label>
-                    <textarea class="form-control" name="qualifications" rows="4" placeholder="List required qualifications and experience..."><?php echo escape($job['qualifications'] ?? ''); ?></textarea>
+                    <textarea class="form-control" name="qualifications" rows="4" placeholder="Example: PhD or Master’s in relevant field; 3+ years teaching experience; strong communication skills; registration with professional body (if applicable)"><?php echo escape($job['qualifications'] ?? ''); ?></textarea>
                 </div>
             </div>
         </div>
@@ -169,7 +169,7 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="card animate-in mb-4" style="animation-delay: .2s;">
         <div class="card-body">
             <h5 class="mb-3 d-flex align-items-center gap-2">
-                <span style="background: linear-gradient(135deg, #f59e0b, #ec4899); color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
+                <span style="background: #c61f26; color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
                     <i class="bi bi-flag"></i>
                 </span>
                 Publishing

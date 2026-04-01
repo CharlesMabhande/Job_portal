@@ -22,7 +22,10 @@ switch ($action) {
         
         $where = ["j.status = ?"];
         $params = [$status];
-        
+        if ($status === 'Active') {
+            $where[] = sqlJobApplicationOpen('j');
+        }
+
         if (!empty($search)) {
             $where[] = "(j.title LIKE ? OR j.description LIKE ?)";
             $params[] = "%{$search}%";
@@ -96,11 +99,15 @@ switch ($action) {
         ");
         $stmt->execute([$jobId]);
         $job = $stmt->fetch();
-        
+
+        if ($job && ($job['status'] ?? '') === 'Active' && jobApplicationDeadlinePassed($job)) {
+            $job = null;
+        }
+
         if ($job) {
             echo json_encode(['success' => true, 'job' => $job]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Job not found']);
+            echo json_encode(['success' => false, 'message' => 'Job not found or no longer accepting applications']);
         }
         break;
         

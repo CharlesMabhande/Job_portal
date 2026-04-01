@@ -19,8 +19,8 @@ switch ($action) {
         $jobId = (int)($_POST['job_id'] ?? 0);
         $userId = $_SESSION['user_id'];
         
-        // Get candidate_id
-        $stmt = $db->prepare("SELECT candidate_id FROM candidates WHERE user_id = ?");
+        // Get candidate + profile documents (applications reuse profile files only)
+        $stmt = $db->prepare("SELECT candidate_id, cv_path, certificates_path FROM candidates WHERE user_id = ?");
         $stmt->execute([$userId]);
         $candidate = $stmt->fetch();
         
@@ -39,13 +39,17 @@ switch ($action) {
             exit;
         }
         
-        // Check job status
-        $stmt = $db->prepare("SELECT status, max_applications, current_applications FROM jobs WHERE job_id = ?");
+        // Check job status and application deadline
+        $stmt = $db->prepare("SELECT status, max_applications, current_applications, application_deadline FROM jobs WHERE job_id = ?");
         $stmt->execute([$jobId]);
         $job = $stmt->fetch();
         
         if (!$job || $job['status'] !== 'Active') {
             echo json_encode(['success' => false, 'message' => 'Job is not available']);
+            exit;
+        }
+        if (jobApplicationDeadlinePassed($job)) {
+            echo json_encode(['success' => false, 'message' => 'The application deadline for this job has passed']);
             exit;
         }
         
@@ -61,29 +65,15 @@ switch ($action) {
             exit;
         }
 
-        // Handle CV upload (required)
-        if (!isset($_FILES['cv']) || $_FILES['cv']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(['success' => false, 'message' => 'CV upload is required']);
+        $cvPath = !empty($candidate['cv_path']) ? trim($candidate['cv_path']) : '';
+        $certificatesPath = !empty($candidate['certificates_path']) ? trim($candidate['certificates_path']) : '';
+        if ($cvPath === '' || $certificatesPath === '') {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Add your CV and qualifications document on your profile before applying.',
+            ]);
             exit;
         }
-        $cvUpload = uploadFile($_FILES['cv'], CV_DIR, 'cv');
-        if (!$cvUpload['success']) {
-            echo json_encode(['success' => false, 'message' => $cvUpload['message'] ?? 'CV upload failed']);
-            exit;
-        }
-        $cvPath = 'cv/' . $cvUpload['filename'];
-
-        // Qualifications / certificates document (required)
-        if (!isset($_FILES['certificates']) || $_FILES['certificates']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(['success' => false, 'message' => 'Qualifications document upload is required']);
-            exit;
-        }
-        $certUpload = uploadFile($_FILES['certificates'], DOCS_DIR, 'certs');
-        if (!$certUpload['success']) {
-            echo json_encode(['success' => false, 'message' => $certUpload['message'] ?? 'Certificates upload failed']);
-            exit;
-        }
-        $certificatesPath = 'documents/' . $certUpload['filename'];
         
         // Create application
         $stmt = $db->prepare("

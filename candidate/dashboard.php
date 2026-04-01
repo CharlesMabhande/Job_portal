@@ -103,9 +103,9 @@ function statusBadgeClass($status) {
 
 <div class="card animate-in">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h5 mb-0"><i class="bi bi-clock-history me-2" style="color: #02FFFD"></i>Recent Applications</h2>
-            <a class="btn btn-sm btn-outline-primary" href="<?php echo BASE_URL; ?>/candidate/applications.php">
+        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-between align-items-stretch align-items-sm-center mb-3">
+            <h2 class="h5 mb-0"><i class="bi bi-clock-history me-2" style="color: #c61f26"></i>Recent Applications</h2>
+            <a class="btn btn-sm btn-outline-primary flex-shrink-0" href="<?php echo BASE_URL; ?>/candidate/applications.php">
                 View all <i class="bi bi-arrow-right ms-1"></i>
             </a>
         </div>

@@ -14,10 +14,10 @@ function navItem($href, $label, $icon = '') {
 
 <div class="jp-nav-wrap">
     <nav class="navbar navbar-expand-lg jp-navbar">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand" href="<?php echo BASE_URL; ?>/index.php">
-                <i class="fa-solid fa-briefcase"></i>
-                University Job Portal
+        <div class="container-fluid px-2 px-sm-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 gap-lg-3" href="<?php echo BASE_URL; ?>/index.php">
+                <img src="<?php echo SITE_LOGO_URL; ?>" class="jp-brand-logo" alt="<?php echo escape(SITE_LOGO_ALT); ?>">
+                <span class="jp-brand-text">Lupane State University<br><small class="jp-brand-sub">Job Portal</small></span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,7 +48,7 @@ function navItem($href, $label, $icon = '') {
                     <?php endif; ?>
                 </ul>
 
-                <div class="d-flex gap-2 align-items-center flex-wrap">
+                <div class="d-flex gap-2 align-items-center flex-wrap jp-navbar-user">
                     <?php if ($isLoggedIn): ?>
                         <span class="user-badge">
                             <i class="fa-solid fa-circle-user me-1"></i>

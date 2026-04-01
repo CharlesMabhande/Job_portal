@@ -84,7 +84,7 @@ require_once BASE_PATH . '/includes/header.php';
                                 <form method="post" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
                                     <input type="hidden" name="job_id" value="<?php echo (int)$j['job_id']; ?>">
-                                    <button class="btn btn-sm btn-primary" type="submit" style="background: linear-gradient(135deg, #059669, #14b8a6); border: none;">
+                                    <button class="btn btn-sm btn-primary" type="submit" style="background: #c61f26; border: none;">
                                         <i class="bi bi-check-lg me-1"></i> Approve
                                     </button>
                                 </form>

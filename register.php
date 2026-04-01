@@ -5,7 +5,7 @@ if (isset($_SESSION['user_id'])) {
     redirect('/dashboard.php');
 }
 
-$pageTitle = 'Register - University Job Portal';
+$pageTitle = 'Register - Lupane State University Job Portal';
 $error = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -76,8 +76,8 @@ require_once BASE_PATH . '/includes/header.php';
 
                 <div class="col-12">
                     <div class="d-flex align-items-center gap-2 mb-3 pb-2" style="border-bottom: 2px solid #e8e8e8;">
-                        <span style="background: #2e37a4; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 600;">1</span>
-                        <span class="fw-semibold" style="color: #2e37a4;">Personal Information</span>
+                        <span style="background: #c61f26; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 600;">1</span>
+                        <span class="fw-semibold" style="color: #1a1a1a;">Personal Information</span>
                     </div>
                 </div>
 
@@ -85,7 +85,7 @@ require_once BASE_PATH . '/includes/header.php';
                     <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
-                        <input type="text" name="first_name" class="form-control" placeholder="Enter first name" required
+                        <input type="text" name="first_name" class="form-control" placeholder="e.g. Tariro" required title="Legal first name as on ID"
                                value="<?php echo escape($_POST['first_name'] ?? ''); ?>">
                     </div>
                 </div>
@@ -93,7 +93,7 @@ require_once BASE_PATH . '/includes/header.php';
                     <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
-                        <input type="text" name="last_name" class="form-control" placeholder="Enter last name" required
+                        <input type="text" name="last_name" class="form-control" placeholder="e.g. Moyo" required title="Legal surname as on ID"
                                value="<?php echo escape($_POST['last_name'] ?? ''); ?>">
                     </div>
                 </div>
@@ -102,7 +102,7 @@ require_once BASE_PATH . '/includes/header.php';
                     <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
-                        <input type="email" name="email" class="form-control" placeholder="you@example.com" required autocomplete="email"
+                        <input type="email" name="email" class="form-control" placeholder="e.g. name@gmail.com or name@employer.co.zw" required autocomplete="email" title="Valid email for alerts and login"
                                value="<?php echo escape($_POST['email'] ?? ''); ?>">
                     </div>
                     <div class="form-text">Used for job alerts and application updates.</div>
@@ -111,15 +111,15 @@ require_once BASE_PATH . '/includes/header.php';
                     <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
-                        <input type="text" name="phone" class="form-control" placeholder="Include country code" required
+                        <input type="text" name="phone" class="form-control" placeholder="e.g. +263 77 123 4567" required title="Include country code; spaces optional"
                                value="<?php echo escape($_POST['phone'] ?? ''); ?>">
                     </div>
                 </div>
 
                 <div class="col-12 mt-4">
                     <div class="d-flex align-items-center gap-2 mb-3 pb-2" style="border-bottom: 2px solid #e8e8e8;">
-                        <span style="background: #2e37a4; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 600;">2</span>
-                        <span class="fw-semibold" style="color: #2e37a4;">Account Security</span>
+                        <span style="background: #c61f26; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 600;">2</span>
+                        <span class="fw-semibold" style="color: #1a1a1a;">Account Security</span>
                     </div>
                 </div>
 
@@ -127,7 +127,7 @@ require_once BASE_PATH . '/includes/header.php';
                     <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
-                        <input type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required minlength="8" autocomplete="new-password">
+                        <input type="password" name="password" class="form-control" placeholder="e.g. MySecure1! (8+ characters)" required minlength="8" autocomplete="new-password" title="At least 8 characters; use letters, numbers, symbols">
                     </div>
                     <div class="form-text">Use a mix of letters, numbers, and symbols.</div>
                 </div>
@@ -135,7 +135,7 @@ require_once BASE_PATH . '/includes/header.php';
                     <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-lock-fill"></i></span>
-                        <input type="password" name="confirm_password" class="form-control" placeholder="Re-enter your password" required minlength="8" autocomplete="new-password">
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Type the same password again" required minlength="8" autocomplete="new-password" title="Must match the password above">
                     </div>
                 </div>
 

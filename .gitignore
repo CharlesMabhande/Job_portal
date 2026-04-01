@@ -1,0 +1,13 @@
+# Candidate uploads — never commit personal documents
+/uploads/cv/*
+!/uploads/cv/.gitkeep
+/uploads/documents/*
+!/uploads/documents/.gitkeep
+
+# Composer (if used)
+/vendor/
+
+# IDE / OS
+Thumbs.db
+.DS_Store
+*.log

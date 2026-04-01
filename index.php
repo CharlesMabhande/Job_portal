@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/config/config.php';
 
-$pageTitle = 'Find Your Next Career - University Job Portal';
+$pageTitle = 'Find Your Next Career - Lupane State University Job Portal';
 $fullWidth = true;
 $db = getDBConnection();
 
@@ -13,8 +13,8 @@ $search = trim($_GET['search'] ?? '');
 $filterType = trim($_GET['job_type'] ?? '');
 $filterDept = trim($_GET['department'] ?? '');
 
-// Build WHERE clause
-$where = "status = 'Active'";
+// Build WHERE clause — active jobs only, and deadline not passed (inclusive of deadline day)
+$where = "status = 'Active' AND " . sqlJobApplicationOpen();
 $params = [];
 
 if ($search !== '') {
@@ -52,20 +52,21 @@ $stmt->execute();
 $jobs = $stmt->fetchAll();
 
 // Fetch filter options
-$deptStmt = $db->query("SELECT DISTINCT department FROM jobs WHERE status = 'Active' AND department IS NOT NULL AND department != '' ORDER BY department");
+$openSql = "status = 'Active' AND " . sqlJobApplicationOpen();
+$deptStmt = $db->query("SELECT DISTINCT department FROM jobs WHERE {$openSql} AND department IS NOT NULL AND department != '' ORDER BY department");
 $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
 
-$typeStmt = $db->query("SELECT DISTINCT job_type FROM jobs WHERE status = 'Active' ORDER BY job_type");
+$typeStmt = $db->query("SELECT DISTINCT job_type FROM jobs WHERE {$openSql} ORDER BY job_type");
 $jobTypes = $typeStmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Stats
-$statsStmt = $db->query("SELECT COUNT(*) FROM jobs WHERE status = 'Active'");
+// Stats (only vacancies currently open for application)
+$statsStmt = $db->query("SELECT COUNT(*) FROM jobs WHERE {$openSql}");
 $totalActiveJobs = (int)$statsStmt->fetchColumn();
 
 $appsStmt = $db->query("SELECT COUNT(*) FROM applications");
 $totalApps = (int)$appsStmt->fetchColumn();
 
-$deptCountStmt = $db->query("SELECT COUNT(DISTINCT department) FROM jobs WHERE status = 'Active' AND department IS NOT NULL AND department != ''");
+$deptCountStmt = $db->query("SELECT COUNT(DISTINCT department) FROM jobs WHERE {$openSql} AND department IS NOT NULL AND department != ''");
 $totalDepts = (int)$deptCountStmt->fetchColumn();
 
 require_once BASE_PATH . '/includes/header.php';
@@ -142,7 +143,7 @@ function typeBadgeClass($type) {
             <form method="get" action="<?php echo BASE_URL; ?>/index.php#open-positions" class="row g-2 align-items-end">
                 <div class="col-12 col-md-4">
                     <label class="form-label small fw-bold">Job Title or Keyword</label>
-                    <input type="text" class="form-control form-control-sm" name="search" value="<?php echo escape($search); ?>" placeholder="Type at least 2 characters...">
+                    <input type="text" class="form-control form-control-sm" name="search" value="<?php echo escape($search); ?>" placeholder="e.g. lecturer, ICT, software, Harare" title="Search job title or description (min. 2 characters)">
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label small fw-bold">Department</label>
@@ -228,8 +229,8 @@ function typeBadgeClass($type) {
         </div>
 
         <?php if ($totalPages > 1): ?>
-            <nav class="mt-4 d-flex justify-content-center">
-                <ul class="pagination mb-0">
+            <nav class="mt-4 d-flex justify-content-center px-1">
+                <ul class="pagination mb-0 flex-wrap justify-content-center">
                     <?php if ($page > 1): ?>
                         <li class="page-item">
                             <a class="page-link" href="<?php echo BASE_URL; ?>/index.php?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&job_type=<?php echo urlencode($filterType); ?>&department=<?php echo urlencode($filterDept); ?>#open-positions">
@@ -301,42 +302,42 @@ function typeBadgeClass($type) {
         </div>
 
         <div class="row g-4">
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="benefit-card">
                     <div class="icon-box blue"><i class="fa-solid fa-heart-pulse"></i></div>
                     <h4>Health Insurance</h4>
                     <p>Comprehensive medical, dental, and vision coverage for you and your family.</p>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="benefit-card">
                     <div class="icon-box teal"><i class="fa-solid fa-piggy-bank"></i></div>
                     <h4>Pension &amp; Provident</h4>
                     <p>Access to pensions, retirement contributions, and provident fund schemes.</p>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="benefit-card">
                     <div class="icon-box amber"><i class="fa-solid fa-calendar-check"></i></div>
                     <h4>Paid Time Off</h4>
                     <p>Annual leave, compassionate leave, sick leave, and all public holidays.</p>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="benefit-card">
                     <div class="icon-box purple"><i class="fa-solid fa-graduation-cap"></i></div>
                     <h4>Professional Development</h4>
                     <p>Training programs, certifications, workshops, and tuition reimbursement.</p>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="benefit-card">
                     <div class="icon-box rose"><i class="fa-solid fa-scale-balanced"></i></div>
                     <h4>Work-Life Balance</h4>
                     <p>Flexible working arrangements and supportive work environment.</p>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="benefit-card">
                     <div class="icon-box sky"><i class="fa-solid fa-chart-line"></i></div>
                     <h4>Career Growth</h4>
@@ -408,7 +409,7 @@ function typeBadgeClass($type) {
                 </div>
             </div>
             <div class="col-lg-6 order-lg-1">
-                <div class="feature-image" style="background: linear-gradient(135deg, #0d7a70 0%, #2b6cb0 60%, #1e3a5f 100%);">
+                <div class="feature-image">
                     <h3><i class="bi bi-trophy me-2"></i>Growth & Advancement</h3>
                     <p>
                         We invest in our staff through continuous training, skills development programmes,

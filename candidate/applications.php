@@ -79,7 +79,7 @@ function statusBadgeClass($status) {
                             <td class="text-muted"><?php echo escape($a['department'] ?? '-'); ?></td>
                             <td class="text-muted">
                                 <?php if (!empty($a['location'])): ?>
-                                    <i class="bi bi-geo-alt me-1" style="color: #02FFFD"></i><?php echo escape($a['location']); ?>
+                                    <i class="bi bi-geo-alt me-1" style="color: #c61f26"></i><?php echo escape($a['location']); ?>
                                 <?php else: ?>
                                     -
                                 <?php endif; ?>

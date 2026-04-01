@@ -48,7 +48,7 @@ require_once BASE_PATH . '/includes/header.php';
 <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-5">
         <div class="card animate-in" style="border: none; box-shadow: 0 8px 30px rgba(0,0,0,.08); border-radius: 16px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #2e37a4, #1a1f6b); padding: 1.75rem 1.5rem; text-align: center;">
+            <div style="background: #c61f26; padding: 1.75rem 1.5rem; text-align: center;">
                 <i class="bi bi-shield-lock-fill" style="font-size: 2.5rem; color: rgba(255,255,255,.9);"></i>
                 <h1 class="h4 mt-2 mb-1" style="color: #fff;">Change Password</h1>
                 <p style="color: rgba(255,255,255,.7); font-size: .9rem; margin: 0;">Keep your account secure with a strong password.</p>
@@ -69,7 +69,7 @@ require_once BASE_PATH . '/includes/header.php';
                         <label class="form-label fw-semibold">Current Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
-                            <input type="password" name="current_password" class="form-control" required autocomplete="current-password" placeholder="Enter current password">
+                            <input type="password" name="current_password" class="form-control" required autocomplete="current-password" placeholder="Your existing login password" title="The password you use to sign in today">
                         </div>
                     </div>
 
@@ -77,7 +77,7 @@ require_once BASE_PATH . '/includes/header.php';
                         <label class="form-label fw-semibold">New Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white"><i class="bi bi-lock-fill"></i></span>
-                            <input type="password" name="new_password" class="form-control" required minlength="8" autocomplete="new-password" placeholder="Minimum 8 characters">
+                            <input type="password" name="new_password" class="form-control" required minlength="8" autocomplete="new-password" placeholder="e.g. NewStr0ng!Pass (min 8 characters)" title="At least 8 characters; different from current password">
                         </div>
                         <div class="form-text">Use a mix of letters, numbers, and symbols.</div>
                     </div>
@@ -86,7 +86,7 @@ require_once BASE_PATH . '/includes/header.php';
                         <label class="form-label fw-semibold">Confirm New Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white"><i class="bi bi-lock-fill"></i></span>
-                            <input type="password" name="confirm_password" class="form-control" required autocomplete="new-password" placeholder="Re-enter new password">
+                            <input type="password" name="confirm_password" class="form-control" required autocomplete="new-password" placeholder="Re-type the new password exactly" title="Must match new password">
                         </div>
                     </div>
 

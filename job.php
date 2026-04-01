@@ -4,15 +4,15 @@ require_once __DIR__ . '/config/config.php';
 $db = getDBConnection();
 $jobId = (int)($_GET['job_id'] ?? 0);
 
-$stmt = $db->prepare("SELECT * FROM jobs WHERE job_id = ? AND status = 'Active'");
+$stmt = $db->prepare("SELECT * FROM jobs WHERE job_id = ? AND status = 'Active' AND " . sqlJobApplicationOpen());
 $stmt->execute([$jobId]);
 $job = $stmt->fetch();
 
 if (!$job) {
-    redirect('/index.php', 'Job not found or not available.', 'error');
+    redirect('/index.php', 'Job not found, closed, or the application deadline has passed.', 'error');
 }
 
-$pageTitle = $job['title'] . ' - University Job Portal';
+$pageTitle = $job['title'] . ' - Lupane State University Job Portal';
 $fullWidth = true;
 
 // Handle candidate apply
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireRole(['Candidate']);
 
     $userId = $_SESSION['user_id'];
-    $stmt = $db->prepare("SELECT candidate_id, cv_path FROM candidates WHERE user_id = ?");
+    $stmt = $db->prepare("SELECT candidate_id, cv_path, certificates_path FROM candidates WHERE user_id = ?");
     $stmt->execute([$userId]);
     $candidate = $stmt->fetch();
     if (!$candidate) {
@@ -38,34 +38,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('/index.php', 'This job is no longer accepting applications.', 'error');
     }
 
+    if (jobApplicationDeadlinePassed($job)) {
+        redirect('/index.php', 'The application deadline for this job has passed.', 'error');
+    }
+
     $coverLetter = trim($_POST['cover_letter'] ?? '');
     if ($coverLetter === '') {
         redirect('/job.php?job_id=' . (int)$jobId, 'Cover letter is required.', 'error');
     }
 
-    $cvPath = $candidate['cv_path'] ?: null;
-    if (isset($_FILES['cv']) && $_FILES['cv']['error'] === UPLOAD_ERR_OK) {
-        $upload = uploadFile($_FILES['cv'], CV_DIR, 'cv');
-        if (!$upload['success']) {
-            redirect('/job.php?job_id=' . (int)$jobId, $upload['message'] ?? 'CV upload failed', 'error');
-        }
-        $cvPath = 'cv/' . $upload['filename'];
-
-        $stmt = $db->prepare("UPDATE candidates SET cv_path = ? WHERE user_id = ?");
-        $stmt->execute([$cvPath, $userId]);
+    /* Documents come only from the candidate profile (uploaded/updated on My Profile). */
+    $cvPath = !empty($candidate['cv_path']) ? trim($candidate['cv_path']) : '';
+    $certificatesPath = !empty($candidate['certificates_path']) ? trim($candidate['certificates_path']) : '';
+    if ($cvPath === '' || $certificatesPath === '') {
+        redirect('/candidate/profile.php', 'Add your CV and qualifications document on your profile before applying. They will be used for every application.', 'error');
     }
-    if (!$cvPath) {
-        redirect('/job.php?job_id=' . (int)$jobId, 'Please upload your CV before applying.', 'error');
-    }
-
-    if (!isset($_FILES['certificates']) || $_FILES['certificates']['error'] !== UPLOAD_ERR_OK) {
-        redirect('/job.php?job_id=' . (int)$jobId, 'Please upload a single document containing all your certificates.', 'error');
-    }
-    $certUpload = uploadFile($_FILES['certificates'], DOCS_DIR, 'certs');
-    if (!$certUpload['success']) {
-        redirect('/job.php?job_id=' . (int)$jobId, $certUpload['message'] ?? 'Certificates upload failed', 'error');
-    }
-    $certificatesPath = 'documents/' . $certUpload['filename'];
 
     $stmt = $db->prepare("INSERT INTO applications (job_id, candidate_id, cover_letter, cv_path, certificates_path, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
     $stmt->execute([(int)$jobId, (int)$candidate['candidate_id'], $coverLetter, $cvPath, $certificatesPath]);
@@ -98,6 +85,13 @@ $typeBadges = [
     'Internship' => 'badge-internship',
 ];
 $badgeClass = $typeBadges[$job['job_type']] ?? 'badge-fulltime';
+
+$candidateApplyDocs = null;
+if (isset($_SESSION['user_id']) && (int)($_SESSION['role_id'] ?? 0) === 1) {
+    $stmt = $db->prepare("SELECT cv_path, certificates_path FROM candidates WHERE user_id = ?");
+    $stmt->execute([(int)$_SESSION['user_id']]);
+    $candidateApplyDocs = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
 
 require_once BASE_PATH . '/includes/header.php';
 ?>
@@ -139,7 +133,7 @@ require_once BASE_PATH . '/includes/header.php';
 </section>
 
 <!-- Job Detail Body -->
-<section class="job-detail-body" style="background: linear-gradient(180deg, #fff 0%, #f4f6fb 100%);">
+<section class="job-detail-body" style="background: #f3f3f4;">
     <div class="container">
         <div class="row g-4">
             <!-- Main Content -->
@@ -236,7 +230,7 @@ require_once BASE_PATH . '/includes/header.php';
 
                 <!-- Apply Card -->
                 <div class="job-sidebar-card">
-                    <div class="sidebar-header" style="background: #2e37a4; border-bottom-color: #2e37a4;">
+                    <div class="sidebar-header" style="background: #c61f26; border-bottom-color: #c61f26;">
                         <h4 style="color: #fff; margin: 0;"><i class="bi bi-send me-2"></i>Apply Now</h4>
                     </div>
                     <div class="sidebar-body">
@@ -256,27 +250,35 @@ require_once BASE_PATH . '/includes/header.php';
                                 <i class="bi bi-info-circle me-1"></i> Only Candidates can apply for jobs.
                             </div>
                         <?php else: ?>
-                            <form method="post" enctype="multipart/form-data" class="vstack gap-3">
+                            <form method="post" class="vstack gap-3">
                                 <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
 
                                 <div>
                                     <label class="form-label fw-semibold">Cover Letter <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" name="cover_letter" rows="5" placeholder="Write a brief cover letter explaining your interest..." required></textarea>
+                                    <textarea class="form-control" name="cover_letter" rows="5" placeholder="Example: Dear Hiring Committee, I am writing to apply for [role]… (2–4 short paragraphs: motivation, relevant experience, availability, closing)." required title="Plain text; avoid pasting from Word with odd formatting"></textarea>
                                 </div>
 
-                                <div>
-                                    <label class="form-label fw-semibold">Upload CV <span class="text-danger">*</span></label>
-                                    <input class="form-control" type="file" name="cv" accept=".pdf,.doc,.docx" required>
-                                    <div class="form-text">PDF, DOC, DOCX &bull; Max 5MB</div>
+                                <div class="border rounded-3 p-3 bg-light">
+                                    <div class="fw-semibold mb-2"><i class="bi bi-paperclip me-1"></i> Documents from your profile</div>
+                                    <p class="small text-muted mb-2">CV and certificates are not uploaded here. They are taken from <strong>My Profile</strong> and attached to this application automatically.</p>
+                                    <?php
+                                    $hasCv = $candidateApplyDocs && !empty($candidateApplyDocs['cv_path']);
+                                    $hasCert = $candidateApplyDocs && !empty($candidateApplyDocs['certificates_path']);
+                                    ?>
+                                    <?php if ($hasCv && $hasCert): ?>
+                                        <ul class="small mb-0 ps-3">
+                                            <li>CV: <a href="<?php echo BASE_URL . '/uploads/' . escape($candidateApplyDocs['cv_path']); ?>" target="_blank" rel="noopener noreferrer">View current file</a></li>
+                                            <li>Certificates: <a href="<?php echo BASE_URL . '/uploads/' . escape($candidateApplyDocs['certificates_path']); ?>" target="_blank" rel="noopener noreferrer">View current file</a></li>
+                                        </ul>
+                                    <?php else: ?>
+                                        <div class="alert alert-warning py-2 px-3 small mb-0">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                            Upload your CV and qualifications on <a href="<?php echo BASE_URL; ?>/candidate/profile.php" class="alert-link">My Profile</a> before you can submit.
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
-                                <div>
-                                    <label class="form-label fw-semibold">Certificates <span class="text-danger">*</span></label>
-                                    <input class="form-control" type="file" name="certificates" accept=".pdf,.doc,.docx" required>
-                                    <div class="form-text">Upload all qualifications in one document.</div>
-                                </div>
-
-                                <button class="btn btn-primary w-100" type="submit">
+                                <button class="btn btn-primary w-100" type="submit" <?php echo (!$hasCv || !$hasCert) ? 'disabled' : ''; ?>>
                                     <i class="bi bi-send me-1"></i> Submit Application
                                 </button>
                             </form>

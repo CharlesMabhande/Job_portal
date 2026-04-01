@@ -19,12 +19,12 @@ $logs = $stmt->fetchAll();
 require_once BASE_PATH . '/includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
+<div class="d-flex jp-page-toolbar justify-content-between align-items-center mb-3">
+    <div class="min-w-0">
         <h1 class="h3 mb-0">Audit Logs</h1>
-        <div class="text-muted">System activity trail for security oversight.</div>
+        <div class="text-muted small">System activity trail for security oversight.</div>
     </div>
-    <a class="btn btn-outline-secondary" href="<?php echo BASE_URL; ?>/admin/dashboard.php">Back</a>
+    <a class="btn btn-outline-secondary flex-shrink-0" href="<?php echo BASE_URL; ?>/admin/dashboard.php">Back</a>
 </div>
 
 <div class="card">

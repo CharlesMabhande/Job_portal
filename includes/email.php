@@ -12,6 +12,21 @@ if (file_exists($autoloadPath)) {
 // Note: we intentionally avoid `use` imports here so this file can load even when PHPMailer isn't installed.
 
 /**
+ * Standard HTML footer for transactional emails (contact address).
+ */
+function emailContactFooterHtml() {
+    $e = htmlspecialchars(SITE_CONTACT_EMAIL, ENT_QUOTES, 'UTF-8');
+    $addr = nl2br(htmlspecialchars(str_replace("\r", '', SITE_CONTACT_ADDRESS), ENT_QUOTES, 'UTF-8'));
+    $phone = htmlspecialchars(SITE_CONTACT_PHONE, ENT_QUOTES, 'UTF-8');
+    $fax = htmlspecialchars(SITE_CONTACT_FAX, ENT_QUOTES, 'UTF-8');
+    return "<p style='margin-top:1.25em;padding-top:1em;border-top:1px solid #eee;color:#444;font-size:0.9em;'>"
+        . "Lupane State University &mdash; e-Recruitment<br>"
+        . "{$addr}<br>"
+        . "Tel: {$phone} &nbsp;|&nbsp; Fax: {$fax}<br>"
+        . "For enquiries: <a href=\"mailto:{$e}\">{$e}</a></p>";
+}
+
+/**
  * Send email
  */
 function sendEmail($to, $subject, $body, $isHTML = true) {
@@ -56,14 +71,15 @@ function sendEmail($to, $subject, $body, $isHTML = true) {
  * Send welcome email
  */
 function sendWelcomeEmail($email, $firstName) {
-    $subject = "Welcome to University Job Portal";
+    $subject = "Welcome to Lupane State University Job Portal";
     $body = "
     <html>
     <body style='font-family: Arial, sans-serif;'>
         <h2>Welcome, {$firstName}!</h2>
-        <p>Thank you for registering with the University Job Portal.</p>
+        <p>Thank you for registering with the Lupane State University Job Portal.</p>
         <p>You can now start applying for job positions.</p>
-        <p>Best regards,<br>University Job Portal Team</p>
+        <p>Best regards,<br>Lupane State University e-Recruitment Team</p>
+        " . emailContactFooterHtml() . "
     </body>
     </html>
     ";
@@ -84,7 +100,8 @@ function sendApplicationConfirmation($email, $firstName, $jobTitle) {
         <p>Thank you for applying for the position: <strong>{$jobTitle}</strong></p>
         <p>We have received your application and will review it shortly.</p>
         <p>You can track your application status in your dashboard.</p>
-        <p>Best regards,<br>University Job Portal Team</p>
+        <p>Best regards,<br>Lupane State University e-Recruitment Team</p>
+        " . emailContactFooterHtml() . "
     </body>
     </html>
     ";
@@ -110,7 +127,8 @@ function sendInterviewScheduledEmail($email, $firstName, $jobTitle, $interviewDa
         {$locationText}
         {$linkText}
         <p>Please be prepared and arrive on time.</p>
-        <p>Best regards,<br>University Job Portal Team</p>
+        <p>Best regards,<br>Lupane State University e-Recruitment Team</p>
+        " . emailContactFooterHtml() . "
     </body>
     </html>
     ";
@@ -140,7 +158,8 @@ function sendStatusUpdateEmail($email, $firstName, $jobTitle, $status) {
         <p><strong>Status:</strong> {$status}</p>
         <p>{$message}</p>
         <p>You can view more details in your dashboard.</p>
-        <p>Best regards,<br>University Job Portal Team</p>
+        <p>Best regards,<br>Lupane State University e-Recruitment Team</p>
+        " . emailContactFooterHtml() . "
     </body>
     </html>
     ";

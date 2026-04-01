@@ -37,6 +37,27 @@ function formatDate($date, $format = 'Y-m-d H:i:s') {
 }
 
 /**
+ * SQL fragment: job application deadline is still today or in the future (or no deadline set).
+ * Pass table alias for joined queries, e.g. sqlJobApplicationOpen('j').
+ */
+function sqlJobApplicationOpen(string $alias = ''): string {
+    $p = $alias !== '' ? $alias . '.' : '';
+    return "({$p}application_deadline IS NULL OR {$p}application_deadline >= CURDATE())";
+}
+
+/**
+ * True if the job row's application_deadline is before today (job should hide from public listings).
+ */
+function jobApplicationDeadlinePassed(array $jobRow): bool {
+    $d = $jobRow['application_deadline'] ?? null;
+    if ($d === null || $d === '') {
+        return false;
+    }
+    $deadlineDate = substr((string)$d, 0, 10);
+    return $deadlineDate < date('Y-m-d');
+}
+
+/**
  * Get user role name
  */
 function getUserRoleName($roleId) {
@@ -218,4 +239,19 @@ function deleteFile($filepath) {
         return unlink($filepath);
     }
     return false;
+}
+
+/**
+ * Example placeholder text for SysAdmin system_settings rows (shown when value is empty).
+ */
+function settingValuePlaceholder(string $settingKey): string {
+    $map = [
+        'site_name' => 'e.g. Lupane State University Job Portal',
+        'site_email' => 'e.g. noreply@lsu.ac.zw',
+        'max_file_size' => 'e.g. 5242880 (bytes; 5MB = 5242880)',
+        'allowed_file_types' => 'e.g. pdf,doc,docx',
+        'email_notifications_enabled' => 'e.g. 1 (on) or 0 (off)',
+        'maintenance_mode' => 'e.g. 0 (normal) or 1 (maintenance)',
+    ];
+    return $map[$settingKey] ?? 'e.g. see description for expected format';
 }

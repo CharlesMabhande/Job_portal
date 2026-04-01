@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = $upload['message'] ?? 'CV upload failed';
             } else {
                 $cvRel = 'cv/' . $upload['filename'];
-                $stmt = $db->prepare("UPDATE candidates SET cv_path = ?, profile_completed = 1 WHERE user_id = ?");
+                $stmt = $db->prepare("UPDATE candidates SET cv_path = ? WHERE user_id = ?");
                 $stmt->execute([$cvRel, $userId]);
             }
         }
@@ -46,15 +46,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = $certUpload['message'] ?? 'Certificates upload failed';
             } else {
                 $certRel = 'documents/' . $certUpload['filename'];
-                $stmt = $db->prepare("UPDATE candidates SET certificates_path = ?, profile_completed = 1 WHERE user_id = ?");
+                $stmt = $db->prepare("UPDATE candidates SET certificates_path = ? WHERE user_id = ?");
                 $stmt->execute([$certRel, $userId]);
             }
         }
 
         if (!$error) {
-            $stmt = $db->prepare("UPDATE candidates SET profile_completed = 1 WHERE user_id = ?");
+            $stmt = $db->prepare("SELECT cv_path, certificates_path FROM candidates WHERE user_id = ?");
             $stmt->execute([$userId]);
-            redirect('/candidate/profile.php', 'Profile updated.', 'success');
+            $docCheck = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (empty($docCheck['cv_path']) || empty($docCheck['certificates_path'])) {
+                $error = 'Upload both your CV and your combined qualifications document here. These files are stored on your profile and used for every job application—you do not upload them again when applying.';
+            } else {
+                $stmt = $db->prepare("UPDATE candidates SET profile_completed = 1 WHERE user_id = ?");
+                $stmt->execute([$userId]);
+                redirect('/candidate/profile.php', 'Profile updated.', 'success');
+            }
         }
     }
 
@@ -86,7 +93,7 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="card animate-in mb-4">
         <div class="card-body">
             <h5 class="mb-3 d-flex align-items-center gap-2">
-                <span style="background: linear-gradient(135deg, #2e37a4, #4f46e5); color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
+                <span style="background: #c61f26; color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
                     <i class="bi bi-person"></i>
                 </span>
                 Personal Details
@@ -94,27 +101,28 @@ require_once BASE_PATH . '/includes/header.php';
             <div class="row g-3">
                 <div class="col-12 col-md-6">
                     <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                    <input type="date" name="date_of_birth" class="form-control" value="<?php echo escape($profile['date_of_birth'] ?? ''); ?>" required>
+                    <input type="date" name="date_of_birth" class="form-control" value="<?php echo escape($profile['date_of_birth'] ?? ''); ?>" required title="Pick your date of birth (stored as YYYY-MM-DD)">
+                    <div class="form-text">Example: use the calendar — format saved as <code>YYYY-MM-DD</code>.</div>
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">Country <span class="text-danger">*</span></label>
-                    <input type="text" name="country" class="form-control" value="<?php echo escape($profile['country'] ?? ''); ?>" required placeholder="e.g. Zimbabwe">
+                    <input type="text" name="country" class="form-control" value="<?php echo escape($profile['country'] ?? ''); ?>" required placeholder="e.g. Zimbabwe" title="Full country name">
                 </div>
                 <div class="col-12">
                     <label class="form-label">Street Address <span class="text-danger">*</span></label>
-                    <textarea name="address" class="form-control" rows="2" required placeholder="Enter your full address"><?php echo escape($profile['address'] ?? ''); ?></textarea>
+                    <textarea name="address" class="form-control" rows="2" required placeholder="e.g. 12 Main Street, CBD, near City Hall"><?php echo escape($profile['address'] ?? ''); ?></textarea>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">City <span class="text-danger">*</span></label>
-                    <input type="text" name="city" class="form-control" value="<?php echo escape($profile['city'] ?? ''); ?>" required placeholder="e.g. Harare">
+                    <input type="text" name="city" class="form-control" value="<?php echo escape($profile['city'] ?? ''); ?>" required placeholder="e.g. Lupane, Bulawayo, Harare">
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">State / Province <span class="text-danger">*</span></label>
-                    <input type="text" name="state" class="form-control" value="<?php echo escape($profile['state'] ?? ''); ?>" required>
+                    <input type="text" name="state" class="form-control" value="<?php echo escape($profile['state'] ?? ''); ?>" required placeholder="e.g. Matabeleland North, Harare Province">
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">Postal Code <span class="text-danger">*</span></label>
-                    <input type="text" name="postal_code" class="form-control" value="<?php echo escape($profile['postal_code'] ?? ''); ?>" required>
+                    <input type="text" name="postal_code" class="form-control" value="<?php echo escape($profile['postal_code'] ?? ''); ?>" required placeholder="e.g. 00000, P.O. Box 170">
                 </div>
             </div>
         </div>
@@ -123,33 +131,34 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="card animate-in mb-4" style="animation-delay: .1s;">
         <div class="card-body">
             <h5 class="mb-3 d-flex align-items-center gap-2">
-                <span style="background: linear-gradient(135deg, #059669, #14b8a6); color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
+                <span style="background: #E35D1E; color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
                     <i class="bi bi-file-earmark-arrow-up"></i>
                 </span>
                 Documents
             </h5>
+            <p class="text-muted small mb-3">Upload and maintain your documents here only. When you apply for a job, the system attaches <strong>these same files</strong> automatically—no re-upload on each application.</p>
             <div class="row g-3">
                 <div class="col-12 col-md-6">
-                    <label class="form-label">Default CV</label>
+                    <label class="form-label">CV <span class="text-danger">*</span></label>
                     <input type="file" name="cv" class="form-control" accept=".pdf,.doc,.docx">
                     <div class="form-text">
                         <?php if (!empty($profile['cv_path'])): ?>
                             <i class="bi bi-check-circle text-success me-1"></i>
                             Current: <a href="<?php echo BASE_URL . '/uploads/' . escape($profile['cv_path']); ?>" target="_blank" rel="noreferrer">View CV</a>
                         <?php else: ?>
-                            <i class="bi bi-exclamation-circle text-warning me-1"></i> No CV uploaded yet. PDF, DOC, DOCX accepted.
+                            <i class="bi bi-exclamation-circle text-warning me-1"></i> No CV yet. <strong>Example:</strong> one file named like <code>YourName_CV.pdf</code> (PDF, DOC, or DOCX; max 5MB).
                         <?php endif; ?>
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">Qualifications / Certificates</label>
+                    <label class="form-label">Qualifications / Certificates <span class="text-danger">*</span></label>
                     <input type="file" name="certificates" class="form-control" accept=".pdf,.doc,.docx">
                     <div class="form-text">
                         <?php if (!empty($profile['certificates_path'])): ?>
                             <i class="bi bi-check-circle text-success me-1"></i>
                             Current: <a href="<?php echo BASE_URL . '/uploads/' . escape($profile['certificates_path']); ?>" target="_blank" rel="noreferrer">View Certificates</a>
                         <?php else: ?>
-                            <i class="bi bi-exclamation-circle text-warning me-1"></i> No certificates uploaded yet.
+                            <i class="bi bi-exclamation-circle text-warning me-1"></i> No certificates yet. <strong>Example:</strong> one combined PDF <code>Qualifications_Certificates.pdf</code> (PDF, DOC, or DOCX; max 5MB).
                         <?php endif; ?>
                     </div>
                 </div>

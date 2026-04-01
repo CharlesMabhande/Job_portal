@@ -19,6 +19,10 @@ date_default_timezone_set('UTC');
 define('BASE_PATH', dirname(__DIR__));
 define('BASE_URL', 'http://localhost/Job_portal');
 
+/** Public URL to the official Lupane State University logo (place file at assets/img/lupane-logo.png). */
+define('SITE_LOGO_URL', BASE_URL . '/assets/img/lupane-logo.png');
+define('SITE_LOGO_ALT', 'Lupane State University Logo - Building Communities through Knowledge.');
+
 // Directories
 define('UPLOAD_DIR', BASE_PATH . '/uploads/');
 define('CV_DIR', UPLOAD_DIR . 'cv/');
@@ -45,8 +49,24 @@ define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
 define('SMTP_USER', 'your-email@gmail.com');
 define('SMTP_PASS', 'your-app-password');
-define('SMTP_FROM_EMAIL', 'noreply@university.edu');
-define('SMTP_FROM_NAME', 'University Job Portal');
+/** Shown in the footer, email templates, and as the default From address (configure SMTP to match your mail server). */
+define('SITE_CONTACT_EMAIL', 'erecruitment@lsu.ac.zw');
+define('SMTP_FROM_EMAIL', SITE_CONTACT_EMAIL);
+define('SMTP_FROM_NAME', 'Lupane State University e-Recruitment');
+
+/** Official LSU campus contacts (footer / displays). */
+define('SITE_CONTACT_ADDRESS', "P.O Box 170 Lupane,\nAlong Bulawayo-Victoria Falls Highway, Zimbabwe");
+define('SITE_CONTACT_PHONE', '+263 (081) 2856488, 2856558');
+define('SITE_CONTACT_FAX', '+263 (081) 2856393');
+
+/**
+ * Official Lupane State University social profiles (footer links).
+ * Leave a URL empty ("") to hide that icon. Add SITE_SOCIAL_X when the university publishes an official handle.
+ */
+define('SITE_SOCIAL_FACEBOOK', 'https://www.facebook.com/lupanestate');
+define('SITE_SOCIAL_INSTAGRAM', 'https://www.instagram.com/lupanestateuniversity/');
+define('SITE_SOCIAL_LINKEDIN', 'https://www.linkedin.com/company/lupane-state-university/');
+define('SITE_SOCIAL_X', '');
 
 // Pagination
 define('ITEMS_PER_PAGE', 10);

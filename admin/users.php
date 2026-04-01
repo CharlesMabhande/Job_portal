@@ -115,7 +115,7 @@ require_once BASE_PATH . '/includes/header.php';
                             </td>
                         </tr>
                         <tr class="collapse" id="e<?php echo (int)$u['user_id']; ?>">
-                            <td colspan="5" style="background: #f4f6fb; border-radius: 12px;">
+                            <td colspan="5" style="background: #f3f3f4; border-radius: 12px;">
                                 <div class="p-2">
                                     <form method="post" class="row g-2 align-items-end mb-3">
                                         <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
@@ -153,11 +153,11 @@ require_once BASE_PATH . '/includes/header.php';
 
                                         <div class="col-12 col-md-4">
                                             <label class="form-label small fw-bold">New Password</label>
-                                            <input type="password" class="form-control form-control-sm" name="new_password" minlength="8" required placeholder="Min 8 characters">
+                                            <input type="password" class="form-control form-control-sm" name="new_password" minlength="8" required placeholder="e.g. TempPass2026! (min 8 chars)" title="At least 8 characters; mix letters, numbers, symbols">
                                         </div>
                                         <div class="col-12 col-md-4">
                                             <label class="form-label small fw-bold">Confirm Password</label>
-                                            <input type="password" class="form-control form-control-sm" name="confirm_password" minlength="8" required>
+                                            <input type="password" class="form-control form-control-sm" name="confirm_password" minlength="8" required placeholder="Re-type the new password exactly" title="Must match new password">
                                         </div>
                                         <div class="col-12 col-md-4 text-md-end">
                                             <button class="btn btn-sm btn-outline-danger" type="submit">
