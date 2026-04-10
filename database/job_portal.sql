@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 01, 2026 at 01:50 PM
+-- Generation Time: Apr 10, 2026 at 10:20 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -51,28 +51,9 @@ CREATE TABLE `applications` (
 --
 
 INSERT INTO `applications` (`application_id`, `application_ref`, `job_id`, `candidate_id`, `cover_letter`, `cv_path`, `certificates_path`, `status`, `applied_at`, `reviewed_by`, `reviewed_at`, `review_notes`, `rejection_reason`, `updated_at`) VALUES
-(1, 'LSU-2026-000001', 1, 3, 'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773999212_bc2e721ff1babd47.pdf', 'Interview Scheduled', '2026-03-20 09:33:32', 2, '2026-03-20 15:00:58', '', '', '2026-03-20 13:30:41'),
-(2, 'LSU-2026-000002', 1, 4, 'mashurotat@gmail.com', 'cv/cv_1775042365_f67b5adfaddd811d.pdf', 'documents/certs_1775042365_277d35c374e7178d.pdf', 'Pending', '2026-04-01 11:20:36', NULL, NULL, NULL, NULL, '2026-04-01 11:20:36');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `signed_exports`
---
-
-CREATE TABLE `signed_exports` (
-  `token` char(32) NOT NULL COMMENT 'hex, no separators',
-  `export_type` varchar(64) NOT NULL,
-  `job_id` int(11) DEFAULT NULL,
-  `canonical_sha256` char(64) NOT NULL,
-  `signature_hmac` char(64) NOT NULL,
-  `payload_json` text DEFAULT NULL COMMENT 'Display metadata (job title, counts, …)',
-  `issued_at` datetime NOT NULL,
-  `issued_by_user_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`token`),
-  KEY `idx_signed_exports_job` (`job_id`),
-  KEY `idx_signed_exports_issued` (`issued_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+(1, 'LSU-2026-000001', 1, 3, 'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773999212_bc2e721ff1babd47.pdf', 'Interview Scheduled', '2026-03-20 09:33:32', 2, '2026-03-20 15:00:58', '', '', '2026-04-10 09:22:39'),
+(2, 'LSU-2026-000002', 1, 4, 'mashurotat@gmail.com', 'cv/cv_1775042365_f67b5adfaddd811d.pdf', 'documents/certs_1775042365_277d35c374e7178d.pdf', 'Pending', '2026-04-01 11:20:36', NULL, NULL, NULL, NULL, '2026-04-10 09:22:39'),
+(3, 'LSU-2026-000003', 2, 3, 'JJJJJ', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773998170_fc3582c47ea8bdc1.pdf', 'Pending', '2026-04-10 09:40:57', NULL, NULL, NULL, NULL, '2026-04-10 09:40:57');
 
 -- --------------------------------------------------------
 
@@ -179,7 +160,47 @@ INSERT INTO `audit_logs` (`log_id`, `user_id`, `action`, `table_name`, `record_i
 (79, 5, 'profile_updated', 'candidates', 5, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-01 11:19:25'),
 (80, 5, 'application_created', 'applications', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-01 11:20:39'),
 (81, 5, 'user_logout', 'users', 5, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-01 11:21:35'),
-(82, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-01 11:21:43');
+(82, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-01 11:21:43'),
+(83, 2, 'user_logout', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-01 11:56:51'),
+(84, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:49:10'),
+(85, 2, 'user_logout', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:51:43'),
+(86, 1, 'user_login', 'users', 1, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:52:53'),
+(87, 1, 'user_updated_by_sysadmin', 'users', 3, NULL, '{\"role_id\":3,\"is_active\":1}', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:56:08'),
+(88, 1, 'user_logout', 'users', 1, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:56:14'),
+(89, 1, 'user_login', 'users', 1, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:56:40'),
+(90, 1, 'password_reset_by_admin', 'users', 3, NULL, '{\"changed_by\":\"admin\"}', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:57:06'),
+(91, 1, 'user_logout', 'users', 1, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:57:11'),
+(92, 3, 'user_login', 'users', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:57:24'),
+(93, 3, 'user_logout', 'users', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:58:24'),
+(94, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 07:58:33'),
+(95, 2, 'job_created', 'jobs', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:04:03'),
+(96, 2, 'user_logout', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:04:10'),
+(97, 3, 'user_login', 'users', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:04:33'),
+(98, 3, 'job_approved', 'jobs', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:05:29'),
+(99, 3, 'user_logout', 'users', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:05:38'),
+(100, 4, 'user_login', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:06:44'),
+(101, 4, 'user_logout', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:08:23'),
+(102, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:34:47'),
+(103, 2, 'job_created', 'jobs', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:55:02'),
+(104, 2, 'user_logout', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 08:55:17'),
+(105, 4, 'user_login', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 09:23:38'),
+(106, 4, 'application_created', 'applications', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 09:41:02'),
+(107, 4, 'profile_updated', 'candidates', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 10:25:39'),
+(108, 4, 'user_logout', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 12:05:37'),
+(109, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 12:05:47'),
+(110, 2, 'user_logout', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 12:55:26'),
+(111, 4, 'user_login', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 12:55:38'),
+(112, 4, 'profile_updated', 'candidates', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:08:03'),
+(113, 4, 'user_logout', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:08:36'),
+(114, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:08:41'),
+(115, 2, 'user_logout', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:13:16'),
+(116, 3, 'user_login', 'users', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:13:24'),
+(117, 3, 'user_logout', 'users', 3, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:13:37'),
+(118, 4, 'user_login', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:13:47'),
+(119, 4, 'profile_updated', 'candidates', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:22:03'),
+(120, 4, 'user_logout', 'users', 4, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:22:07'),
+(121, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 14:22:15'),
+(122, 2, 'user_login', 'users', 2, NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0', '2026-04-10 19:03:38');
 
 -- --------------------------------------------------------
 
@@ -218,8 +239,8 @@ CREATE TABLE `candidates` (
 
 INSERT INTO `candidates` (`candidate_id`, `user_id`, `date_of_birth`, `gender`, `address`, `city`, `state`, `country`, `postal_code`, `cv_path`, `certificates_path`, `cover_letter_template`, `skills`, `education`, `professional_qualifications`, `o_level_qualifications`, `a_level_qualifications`, `other_certifications`, `experience`, `profile_completed`, `created_at`, `updated_at`) VALUES
 (1, 2, '1996-11-12', NULL, '5029 Skyview', 'Chivhu', 'Mashonaland East', 'Zimbabwe', '00000', 'cv/cv_1772189252_98c4b19a8d008d9c.doc', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-02-27 10:42:51', '2026-02-27 10:47:32'),
-(2, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-02-27 14:26:08', '2026-02-27 14:26:08'),
-(3, 4, '1999-11-02', NULL, '78 Mukoba 6', 'Gweru', 'Midlands', 'Zimbabwe', '00000', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773998170_fc3582c47ea8bdc1.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-03-20 08:48:27', '2026-03-20 09:33:32'),
+(2, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-02-27 14:26:08', '2026-02-27 14:26:08'),
+(3, 4, '1999-11-02', 'Male', '78 Mukoba 6', 'Gweru', 'Midlands', 'Zimbabwe', '00000', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773998170_fc3582c47ea8bdc1.pdf', NULL, NULL, NULL, '[{\"institution\":\"MSU\",\"title\":\"BSC HONS IN COMPUTER SCIENCE\",\"grade\":\"2.1\",\"year\":\"NOV 2023\"}]', '[{\"institution\":\"SIZANE HIGH\",\"title\":\"MATHS\",\"grade\":\"A\",\"year\":\"2014\",\"month\":\"November\",\"examining_board\":\"ZIMSEC\"},{\"institution\":\"SIZANE HIGH\",\"title\":\"ENGLISH\",\"grade\":\"C\",\"year\":\"2014\",\"month\":\"November\",\"examining_board\":\"ZIMSEC\"}]', '[{\"institution\":\"SIZANE HIGH\",\"title\":\"COMPUTING\",\"grade\":\"B\",\"year\":\"2015\",\"month\":\"November\",\"examining_board\":\"ZIMSEC\"},{\"institution\":\"SIZANE HIGH\",\"title\":\"BUSINESS STUDIES\",\"grade\":\"A\",\"year\":\"2015\",\"month\":\"November\",\"examining_board\":\"ZIMSEC\"},{\"institution\":\"SIZANE HIGH\",\"title\":\"GEOGRAPHY\",\"grade\":\"E\",\"year\":\"2015\",\"month\":\"November\",\"examining_board\":\"ZIMSEC\"},{\"institution\":\"SIZANE HIGH\",\"title\":\"ENGLISH LANGUAGE AND COMMUNICATION SKILLS\",\"grade\":\"5\",\"year\":\"2015\",\"month\":\"November\",\"examining_board\":\"ZIMSEC\"}]', '[{\"institution\":\"CISCO\",\"title\":\"CCNA\",\"grade\":\"PASS\",\"year\":\"2023\"}]', '[{\"employer\":\"LSU\",\"job_title\":\"SOFTWARE DEVELOPER\",\"start\":\"2024\",\"end\":\"\",\"current\":true,\"description\":\"DEVELOPING SOFTWARE\"}]', 1, '2026-03-20 08:48:27', '2026-04-10 14:22:03'),
 (4, 5, '2000-12-11', NULL, '50867 M EX', 'Chivhu', 'Mashonaland East', 'Zimbabwe', '00000', 'cv/cv_1775042365_f67b5adfaddd811d.pdf', 'documents/certs_1775042365_277d35c374e7178d.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-01 11:17:25', '2026-04-01 11:19:25');
 
 -- --------------------------------------------------------
@@ -232,13 +253,20 @@ CREATE TABLE `candidate_references` (
   `reference_id` int(11) NOT NULL,
   `candidate_id` int(11) NOT NULL,
   `full_name` varchar(200) NOT NULL,
-  `job_title` varchar(200) DEFAULT NULL,
+  `job_title` varchar(200) DEFAULT NULL COMMENT 'Role or relationship, e.g. Former manager',
   `organisation` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `phone` varchar(50) DEFAULT NULL,
   `sort_order` smallint(6) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `candidate_references`
+--
+
+INSERT INTO `candidate_references` (`reference_id`, `candidate_id`, `full_name`, `job_title`, `organisation`, `email`, `phone`, `sort_order`, `created_at`) VALUES
+(3, 3, 'DR Moyo', 'Manager', 'MSU', 'drmoyo@gmail.com', '+26377777777', 0, '2026-04-10 14:22:03');
 
 -- --------------------------------------------------------
 
@@ -304,7 +332,9 @@ CREATE TABLE `jobs` (
 --
 
 INSERT INTO `jobs` (`job_id`, `title`, `department`, `description`, `requirements`, `qualifications`, `location`, `job_type`, `vacancy_scope`, `salary_min`, `salary_max`, `posted_by`, `status`, `approved_by`, `approved_at`, `application_deadline`, `max_applications`, `current_applications`, `created_at`, `updated_at`) VALUES
-(1, 'SOFTWARE DEVELOPER', 'ICTS Department', 'Software developer', 'Developing and Maintaining University Software.', 'BSc Hons in Computer Science or and Related Degree.', 'Main Campus', 'Full-time', 'External', NULL, NULL, 2, 'Active', NULL, NULL, '2026-06-06', 0, 2, '2026-03-20 09:24:42', '2026-04-01 11:20:36');
+(1, 'SOFTWARE DEVELOPER', 'ICTS Department', 'Software developer', 'Developing and Maintaining University Software.', 'BSc Hons in Computer Science or and Related Degree.', 'Main Campus', 'Full-time', 'External', NULL, NULL, 2, 'Active', NULL, NULL, '2026-06-06', 0, 2, '2026-03-20 09:24:42', '2026-04-01 11:20:36'),
+(2, 'Lecturer-Computer Science', 'Faculty of Science', 'Lecturer-Computer Science- Teaching and Learning, planning', 'Teaching and Learning, planning', 'PHD In Computer Science', 'Lupane-Main Campus', 'Part-time', 'External', NULL, NULL, 2, 'Active', 3, '2026-04-10 10:05:29', '2026-04-20', 0, 1, '2026-04-10 08:04:03', '2026-04-10 09:40:57'),
+(3, 'Senior- Lecturer- Accounting and Finance', 'Faculty of Commerce', 'Senior- Lecturer- Accounting and Finance', 'Senior- Lecturer- Accounting and Finance', 'Senior- Lecturer- Accounting and Finance', 'Bulawayo', 'Contract', 'Internal', NULL, NULL, 2, 'Active', NULL, NULL, '2026-04-25', 4, 0, '2026-04-10 08:55:02', '2026-04-10 08:55:02');
 
 -- --------------------------------------------------------
 
@@ -349,7 +379,8 @@ INSERT INTO `notifications` (`notification_id`, `user_id`, `type`, `title`, `mes
 (2, 4, 'application_status_changed', 'Application Status Updated', 'Your application for SOFTWARE DEVELOPER is now: Shortlisted', 1, 'application', 0, '2026-03-20 12:58:31'),
 (3, 4, 'application_status_changed', 'Application Status Updated', 'Your application for SOFTWARE DEVELOPER is now: Under Review', 1, 'application', 0, '2026-03-20 13:00:58'),
 (4, 4, 'interview_scheduled', 'Interview Scheduled', 'Your interview for SOFTWARE DEVELOPER has been scheduled.', 1, 'interview', 0, '2026-03-20 13:30:41'),
-(5, 5, 'application_submitted', 'Application Submitted', 'Your application for SOFTWARE DEVELOPER has been submitted.', 2, 'application', 0, '2026-04-01 11:20:36');
+(5, 5, 'application_submitted', 'Application Submitted', 'Your application for SOFTWARE DEVELOPER has been submitted.', 2, 'application', 0, '2026-04-01 11:20:36'),
+(6, 4, 'application_submitted', 'Application Submitted', 'Your application for Lecturer-Computer Science has been submitted. Reference: LSU-2026-000003.', 3, 'application', 0, '2026-04-10 09:40:57');
 
 -- --------------------------------------------------------
 
@@ -373,6 +404,32 @@ INSERT INTO `roles` (`role_id`, `role_name`, `permissions`, `created_at`) VALUES
 (2, 'HR', '{\"create_jobs\": true, \"view_applications\": true, \"shortlist\": true, \"reject\": true, \"schedule_interviews\": true, \"view_reports\": true}', '2026-02-27 10:39:13'),
 (3, 'Management', '{\"view_dashboard\": true, \"approve_jobs\": true, \"approve_offers\": true, \"view_reports\": true, \"view_analytics\": true}', '2026-02-27 10:39:13'),
 (4, 'SysAdmin', '{\"full_access\": true, \"manage_users\": true, \"manage_roles\": true, \"system_settings\": true, \"database_backup\": true, \"security_monitoring\": true}', '2026-02-27 10:39:13');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `signed_exports`
+--
+
+CREATE TABLE `signed_exports` (
+  `token` char(32) NOT NULL COMMENT 'hex, no separators',
+  `export_type` varchar(64) NOT NULL,
+  `job_id` int(11) DEFAULT NULL,
+  `canonical_sha256` char(64) NOT NULL,
+  `signature_hmac` char(64) NOT NULL,
+  `payload_json` text DEFAULT NULL COMMENT 'Display metadata (job title, counts, …)',
+  `issued_at` datetime NOT NULL,
+  `issued_by_user_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `signed_exports`
+--
+
+INSERT INTO `signed_exports` (`token`, `export_type`, `job_id`, `canonical_sha256`, `signature_hmac`, `payload_json`, `issued_at`, `issued_by_user_id`) VALUES
+('31763ca16cf9d419650cbaed9b478199', 'job_summary_table', 1, '2756871ea8e6ab93564cdb97c7a6ca9d25a7a49ce538c67f9a606a39bf06bead', '3116286cd704562b4da655a43a89e4482e369f006ad216ea2dd3b7258e2b18d3', '{\"job_title\":\"SOFTWARE DEVELOPER\",\"department\":\"ICTS Department\",\"applicant_count\":2,\"export_label\":\"Applicant summary table\"}', '2026-04-10 21:58:12', 2),
+('869cd9addba2bb092844fd7837f2b9da', 'job_summary_table', 1, '2756871ea8e6ab93564cdb97c7a6ca9d25a7a49ce538c67f9a606a39bf06bead', '3bcadd772caf1dcf9fe957c13f990e80ebff76d91ab7b566d3d002eb7053f671', '{\"job_title\":\"SOFTWARE DEVELOPER\",\"department\":\"ICTS Department\",\"applicant_count\":2,\"export_label\":\"Applicant summary table\"}', '2026-04-10 22:08:02', 2),
+('df734d1ed329563fe4635e3141e42d00', 'job_summary_table', 1, '2756871ea8e6ab93564cdb97c7a6ca9d25a7a49ce538c67f9a606a39bf06bead', '17cc9ab5aa6134cff932a3556f972b51b5914024dceb66220811d82f5acba701', '{\"job_title\":\"SOFTWARE DEVELOPER\",\"department\":\"ICTS Department\",\"applicant_count\":2,\"export_label\":\"Applicant summary table\"}', '2026-04-10 21:37:03', 2);
 
 -- --------------------------------------------------------
 
@@ -430,10 +487,10 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `email`, `password`, `role_id`, `first_name`, `last_name`, `phone`, `is_active`, `email_verified`, `verification_token`, `reset_token`, `reset_token_expiry`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'admin@university.edu', '$2y$12$jKhCaqNbTZhXUv1ZDn8UM.HeqgkyQeSJoRu5Pu4tbaxMPCDE.zgES', 4, 'System', 'Administrator', NULL, 1, 1, NULL, NULL, NULL, '2026-04-01 12:58:58', '2026-02-27 10:40:48', '2026-04-01 10:58:58'),
-(2, 'charliemabhande@gmail.com', '$2y$12$aIKhNkEb9wpw.If1mGMyBOkgEJeLotsB90ywiR.AGEHQTfzYqiyT6', 2, 'Charles', 'Mabhande', '0776318768', 1, 0, '886162ec86869a92d1df2a0375a36e4f0369c0d8d2ade67412c303eb8a57c55f', NULL, NULL, '2026-04-01 13:21:43', '2026-02-27 10:42:51', '2026-04-01 11:21:43'),
-(3, 'simon@gmail.com', '$2y$12$1AkfdtCE22uMiUcaeAoKt.vL3gbfuHPiSSJunTId3vYGqdpJrwn3a', 1, 'Simon', 'Gobvu', '0777777777', 1, 0, '93336f566fa67d1a9f480ac19529b3967a4d2fdc1ea7c9d7fd2d52d691ca340a', NULL, NULL, '2026-02-27 16:26:11', '2026-02-27 14:26:08', '2026-02-27 14:26:11'),
-(4, 'schibwe@gmail.com', '$2y$12$fXArZhG7t7PAELKkavl.8ev8X7OILHP0y/4PNF8U0uaQpkEiq0qEe', 1, 'Samuel', 'Chibwe', '+2637123333334', 1, 0, 'aa6493b42ea7ca343b296437cfa013aeaa98f4f1663197a599475d1deaab2492', NULL, NULL, '2026-04-01 12:59:38', '2026-03-20 08:48:27', '2026-04-01 10:59:38'),
+(1, 'admin@university.edu', '$2y$12$jKhCaqNbTZhXUv1ZDn8UM.HeqgkyQeSJoRu5Pu4tbaxMPCDE.zgES', 4, 'System', 'Administrator', NULL, 1, 1, NULL, NULL, NULL, '2026-04-10 09:56:40', '2026-02-27 10:40:48', '2026-04-10 07:56:40'),
+(2, 'charliemabhande@gmail.com', '$2y$12$aIKhNkEb9wpw.If1mGMyBOkgEJeLotsB90ywiR.AGEHQTfzYqiyT6', 2, 'Charles', 'Mabhande', '0776318768', 1, 0, '886162ec86869a92d1df2a0375a36e4f0369c0d8d2ade67412c303eb8a57c55f', NULL, NULL, '2026-04-10 21:03:38', '2026-02-27 10:42:51', '2026-04-10 19:03:38'),
+(3, 'simon@gmail.com', '$2y$12$bP1MlyGPpDd81WmJwBZsbepdT1XXFWSwHpT1nBAa3s2iz1.03zB02', 3, 'Simon', 'Gobvu', '0777777777', 1, 0, '93336f566fa67d1a9f480ac19529b3967a4d2fdc1ea7c9d7fd2d52d691ca340a', NULL, NULL, '2026-04-10 16:13:24', '2026-02-27 14:26:08', '2026-04-10 14:13:24'),
+(4, 'schibwe@gmail.com', '$2y$12$fXArZhG7t7PAELKkavl.8ev8X7OILHP0y/4PNF8U0uaQpkEiq0qEe', 1, 'Samuel', 'Chibwe', '+2637123333334', 1, 0, 'aa6493b42ea7ca343b296437cfa013aeaa98f4f1663197a599475d1deaab2492', NULL, NULL, '2026-04-10 16:13:47', '2026-03-20 08:48:27', '2026-04-10 14:13:47'),
 (5, 'mashurotat@gmail.com', '$2y$12$hodYtU1WRJYX/qFvj5n3FuCfaKJ1K33O31Ocf1hnKfWwfegKL2/mS', 1, 'Tatenda', 'Mashuro', '+2637123333334', 1, 0, 'ed66324dd77e8009d3bf52a446b5eca65aa00cd9de89ec4106c21572dcde31ef', NULL, NULL, '2026-04-01 13:17:30', '2026-04-01 11:17:25', '2026-04-01 11:17:30');
 
 --
@@ -445,8 +502,8 @@ INSERT INTO `users` (`user_id`, `email`, `password`, `role_id`, `first_name`, `l
 --
 ALTER TABLE `applications`
   ADD PRIMARY KEY (`application_id`),
-  ADD UNIQUE KEY `uq_applications_ref` (`application_ref`),
   ADD UNIQUE KEY `unique_application` (`job_id`,`candidate_id`),
+  ADD UNIQUE KEY `uq_applications_ref` (`application_ref`),
   ADD KEY `candidate_id` (`candidate_id`),
   ADD KEY `status` (`status`),
   ADD KEY `reviewed_by` (`reviewed_by`);
@@ -517,6 +574,14 @@ ALTER TABLE `roles`
   ADD UNIQUE KEY `role_name` (`role_name`);
 
 --
+-- Indexes for table `signed_exports`
+--
+ALTER TABLE `signed_exports`
+  ADD PRIMARY KEY (`token`),
+  ADD KEY `idx_signed_exports_job` (`job_id`),
+  ADD KEY `idx_signed_exports_issued` (`issued_at`);
+
+--
 -- Indexes for table `system_settings`
 --
 ALTER TABLE `system_settings`
@@ -541,13 +606,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `applications`
 --
 ALTER TABLE `applications`
-  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=123;
 
 --
 -- AUTO_INCREMENT for table `candidates`
@@ -559,7 +624,7 @@ ALTER TABLE `candidates`
 -- AUTO_INCREMENT for table `candidate_references`
 --
 ALTER TABLE `candidate_references`
-  MODIFY `reference_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `reference_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `interviews`
@@ -571,7 +636,7 @@ ALTER TABLE `interviews`
 -- AUTO_INCREMENT for table `jobs`
 --
 ALTER TABLE `jobs`
-  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `job_alerts`
@@ -583,7 +648,7 @@ ALTER TABLE `job_alerts`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `roles`
