@@ -17,9 +17,15 @@ require_once BASE_PATH . '/includes/header.php';
         <h1><i class="bi bi-bar-chart-line me-2"></i>Management Dashboard</h1>
         <p>Approve job postings and oversee hiring decisions.</p>
     </div>
-    <div class="page-actions">
+    <div class="page-actions d-flex flex-wrap gap-2">
         <a class="btn btn-light btn-sm text-primary fw-bold" href="<?php echo BASE_URL; ?>/management/jobs.php">
             <i class="bi bi-check-circle me-1"></i> Review Approvals
+        </a>
+        <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/management/published-jobs.php">
+            <i class="bi bi-table me-1"></i> Job summary tables
+        </a>
+        <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/hr/applications.php">
+            <i class="bi bi-people me-1"></i> Applications
         </a>
     </div>
 </div>

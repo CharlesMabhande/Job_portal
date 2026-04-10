@@ -1,0 +1,11 @@
+# Prefer opening PDFs in the browser tab instead of forcing download (Apache static file serving).
+<IfModule mod_headers.c>
+    <FilesMatch "(?i)\.pdf$">
+        Header unset Content-Disposition
+        Header set Content-Disposition "inline"
+        Header set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+</IfModule>
+<IfModule mod_mime.c>
+    AddType application/pdf .pdf
+</IfModule>

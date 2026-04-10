@@ -138,6 +138,103 @@ function adminResetUserPassword($targetUserId, $newPassword) {
 }
 
 /**
+ * SysAdmin: permanently delete a candidate user account, profile, applications, uploads, and related rows.
+ * Adjusts jobs.current_applications before cascade deletes. Cannot delete own account or non-candidates.
+ *
+ * @return array{success:bool,message?:string}
+ */
+function adminDeleteCandidateUser(int $targetUserId, int $actorUserId): array {
+    if ($targetUserId < 1) {
+        return ['success' => false, 'message' => 'Invalid user.'];
+    }
+    if ($targetUserId === $actorUserId) {
+        return ['success' => false, 'message' => 'You cannot delete your own account.'];
+    }
+
+    $db = getDBConnection();
+    $stmt = $db->prepare("
+        SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name
+        FROM users u
+        JOIN roles r ON u.role_id = r.role_id
+        WHERE u.user_id = ?
+    ");
+    $stmt->execute([$targetUserId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$user) {
+        return ['success' => false, 'message' => 'User not found.'];
+    }
+    if (($user['role_name'] ?? '') !== 'Candidate') {
+        return ['success' => false, 'message' => 'Only candidate accounts can be deleted with this action.'];
+    }
+
+    $stmt = $db->prepare('SELECT candidate_id, cv_path, certificates_path FROM candidates WHERE user_id = ?');
+    $stmt->execute([$targetUserId]);
+    $cand = $stmt->fetch(PDO::FETCH_ASSOC);
+    $candidateId = $cand ? (int)$cand['candidate_id'] : 0;
+
+    $jobDecrements = [];
+    $pathsToDelete = [];
+    if ($cand) {
+        foreach (['cv_path', 'certificates_path'] as $col) {
+            $p = trim((string)($cand[$col] ?? ''));
+            if ($p !== '') {
+                $pathsToDelete[$p] = true;
+            }
+        }
+    }
+    if ($candidateId > 0) {
+        $stmt = $db->prepare('SELECT job_id, COUNT(*) AS c FROM applications WHERE candidate_id = ? GROUP BY job_id');
+        $stmt->execute([$candidateId]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $jobDecrements[(int)$row['job_id']] = (int)$row['c'];
+        }
+        $stmt = $db->prepare('SELECT cv_path, certificates_path FROM applications WHERE candidate_id = ?');
+        $stmt->execute([$candidateId]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            foreach (['cv_path', 'certificates_path'] as $col) {
+                $p = trim((string)($row[$col] ?? ''));
+                if ($p !== '') {
+                    $pathsToDelete[$p] = true;
+                }
+            }
+        }
+    }
+
+    $snapshot = [
+        'email' => $user['email'],
+        'name' => trim((string)$user['first_name'] . ' ' . (string)$user['last_name']),
+        'candidate_id' => $candidateId,
+    ];
+
+    try {
+        $db->beginTransaction();
+        foreach ($jobDecrements as $jobId => $cnt) {
+            if ($jobId < 1 || $cnt < 1) {
+                continue;
+            }
+            $u = $db->prepare('UPDATE jobs SET current_applications = GREATEST(0, current_applications - ?) WHERE job_id = ?');
+            $u->execute([(int)$cnt, $jobId]);
+        }
+        foreach (array_keys($pathsToDelete) as $rel) {
+            deleteUploadRelativePath($rel);
+        }
+        $db->prepare('DELETE FROM users WHERE user_id = ?')->execute([$targetUserId]);
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log('adminDeleteCandidateUser: ' . $e->getMessage());
+
+        return ['success' => false, 'message' => 'Could not delete the account. Please try again or check the server log.'];
+    }
+
+    logAudit('candidate_account_deleted', 'users', $targetUserId, $snapshot, null);
+
+    return ['success' => true, 'message' => 'Candidate account, applications, and profile data were permanently removed.'];
+}
+
+/**
  * Logout user
  */
 function logoutUser() {
@@ -185,6 +282,134 @@ function getCandidateProfile($userId) {
 }
 
 /**
+ * Candidate + user fields by candidate_id (for staff read-only profile).
+ *
+ * @return array<string,mixed>|null
+ */
+function getCandidateProfileByCandidateId(int $candidateId): ?array {
+    if ($candidateId < 1) {
+        return null;
+    }
+    $db = getDBConnection();
+    $stmt = $db->prepare("
+        SELECT c.*, u.user_id, u.email, u.first_name, u.last_name, u.phone
+        FROM candidates c
+        JOIN users u ON c.user_id = u.user_id
+        WHERE c.candidate_id = ?
+    ");
+    $stmt->execute([$candidateId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $row ?: null;
+}
+
+/**
+ * HR/Management may view profiles of candidates who have at least one application.
+ * SysAdmin may view any candidate profile.
+ */
+function staffCanViewCandidateProfile(int $candidateId): bool {
+    $role = (string)($_SESSION['role_name'] ?? '');
+    if ($role === 'SysAdmin') {
+        return true;
+    }
+    if (!in_array($role, ['HR', 'Management'], true)) {
+        return false;
+    }
+    if ($candidateId < 1) {
+        return false;
+    }
+    $db = getDBConnection();
+    $stmt = $db->prepare('SELECT 1 FROM applications WHERE candidate_id = ? LIMIT 1');
+    $stmt->execute([$candidateId]);
+
+    return (bool) $stmt->fetchColumn();
+}
+
+/** Max number of references a candidate may store on their profile. */
+function candidateReferencesMax(): int {
+    return 5;
+}
+
+/**
+ * @return list<array<string,mixed>>
+ */
+function getCandidateReferences(int $candidateId): array {
+    $db = getDBConnection();
+    $stmt = $db->prepare('
+        SELECT reference_id, full_name, job_title, organisation, email, phone, sort_order
+        FROM candidate_references
+        WHERE candidate_id = ?
+        ORDER BY sort_order ASC, reference_id ASC
+    ');
+    $stmt->execute([$candidateId]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $rows ?: [];
+}
+
+/**
+ * Replace all references for a candidate. Rows with empty full_name are skipped.
+ * @param list<array{full_name?:string,job_title?:string,organisation?:string,email?:string,phone?:string}> $rows
+ * @return string|null Error message or null on success
+ */
+function saveCandidateReferences(int $candidateId, array $rows): ?string {
+    $max = candidateReferencesMax();
+    $db = getDBConnection();
+    $strLen = static function (string $s): int {
+        return function_exists('mb_strlen') ? mb_strlen($s, 'UTF-8') : strlen($s);
+    };
+    $toInsert = [];
+    foreach ($rows as $r) {
+        if (count($toInsert) >= $max) {
+            break;
+        }
+        $name = trim((string)($r['full_name'] ?? ''));
+        if ($name === '') {
+            continue;
+        }
+        if ($strLen($name) > 200) {
+            return 'Each reference name must be at most 200 characters.';
+        }
+        $title = trim((string)($r['job_title'] ?? ''));
+        $org = trim((string)($r['organisation'] ?? ''));
+        $email = trim((string)($r['email'] ?? ''));
+        $phone = trim((string)($r['phone'] ?? ''));
+        if ($strLen($title) > 200) {
+            return 'Job title / relationship is too long for one of your references.';
+        }
+        if ($strLen($org) > 255) {
+            return 'Organisation name is too long for one of your references.';
+        }
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return 'Enter a valid email address for each reference that includes an email.';
+        }
+        if ($strLen($email) > 255 || $strLen($phone) > 50) {
+            return 'Email or phone is too long for one of your references.';
+        }
+        $toInsert[] = [$name, $title !== '' ? $title : null, $org !== '' ? $org : null, $email !== '' ? $email : null, $phone !== '' ? $phone : null];
+    }
+
+    $db->beginTransaction();
+    try {
+        $db->prepare('DELETE FROM candidate_references WHERE candidate_id = ?')->execute([$candidateId]);
+        $ins = $db->prepare('
+            INSERT INTO candidate_references (candidate_id, full_name, job_title, organisation, email, phone, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ');
+        $order = 0;
+        foreach ($toInsert as $t) {
+            $ins->execute([$candidateId, $t[0], $t[1], $t[2], $t[3], $t[4], $order]);
+            $order++;
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        $db->rollBack();
+        return 'Could not save references. If the problem persists, contact support.';
+    }
+
+    return null;
+}
+
+/**
  * Update candidate profile
  */
 function updateCandidateProfile($userId, $data) {
@@ -193,8 +418,9 @@ function updateCandidateProfile($userId, $data) {
     $fields = [];
     $values = [];
     
-    $allowedFields = ['date_of_birth', 'address', 'city', 'state', 'country', 'postal_code', 
-                      'cover_letter_template', 'skills', 'education', 'experience'];
+    $allowedFields = ['date_of_birth', 'gender', 'address', 'city', 'state', 'country', 'postal_code',
+                      'cover_letter_template', 'skills', 'education', 'experience',
+                      'professional_qualifications', 'o_level_qualifications', 'a_level_qualifications', 'other_certifications'];
     
     foreach ($allowedFields as $field) {
         if (isset($data[$field])) {

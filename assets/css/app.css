@@ -533,6 +533,23 @@ a.btn-hero-outline:hover,
   color: #dc2626;
 }
 
+.job-deadline-badge {
+  text-align: right;
+  line-height: 1.3;
+  max-width: 9.5rem;
+}
+
+.job-deadline-badge .deadline-date-line {
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-top: 0.15rem;
+  opacity: 0.92;
+}
+
+.job-detail-header .job-deadline-badge .deadline-date-line {
+  color: rgba(255, 255, 255, 0.95);
+}
+
 .badge-type {
   padding: .3rem .75rem;
   border-radius: 50px;
@@ -543,6 +560,18 @@ a.btn-hero-outline:hover,
 .badge-parttime { background: rgba(198,31,38,.1); color: #8f151a; }
 .badge-contract { background: rgba(227,93,30,.1); color: #8B3915; }
 .badge-internship { background: rgba(124,58,237,.1); color: #6d28d9; }
+
+/* Internal = staff-focused; External = open to public (distinct from job_type Full-time etc.) */
+.badge-vacancy-internal {
+  background: rgba(5, 150, 105, 0.14);
+  color: #047857;
+  font-weight: 700;
+}
+.badge-vacancy-external {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  font-weight: 700;
+}
 
 .badge-positions {
   background: rgba(198,31,38,.08);
@@ -1319,7 +1348,7 @@ video {
   background: #fff;
 }
 .table-hr-applications {
-  min-width: 960px;
+  min-width: 1040px;
   margin-bottom: 0;
 }
 .table-hr-applications tbody td {
@@ -1768,6 +1797,15 @@ a.btn-light.text-primary {
   color: #1a1a1a !important;
 }
 
+.badge-vacancy-internal {
+  background: rgba(5, 150, 105, 0.14) !important;
+  color: #047857 !important;
+}
+.badge-vacancy-external {
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #1d4ed8 !important;
+}
+
 /* =============================================================================
    Cross-device responsive system (phones · tablets · laptops · large desktops)
    ============================================================================= */
@@ -1914,6 +1952,212 @@ main.jp-main {
 .page-header .form-select,
 .page-header .btn {
   min-height: 40px;
+}
+
+/* -------- Candidate dashboard: sidebar stack (profile + positions) -------- */
+@media (min-width: 992px) {
+  .jp-dash-sidebar-stack {
+    position: sticky;
+    top: 92px;
+  }
+}
+
+.jp-dash-profile-card {
+  border: none;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.jp-dash-profile-card:hover {
+  box-shadow: 0 12px 36px rgba(198, 31, 38, 0.14);
+  transform: translateY(-1px);
+}
+
+.jp-dash-profile-card .card-body {
+  padding: 1rem 1.1rem;
+}
+
+.jp-dash-profile-avatar {
+  font-size: 2.35rem;
+  color: #c61f26;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.jp-dash-profile-label {
+  letter-spacing: 0.04em;
+  font-size: 0.65rem !important;
+}
+
+/* -------- Candidate dashboard: available positions sidebar -------- */
+.jp-dash-sidebar {
+  border: none;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.jp-dash-sidebar-head {
+  background: linear-gradient(135deg, #c61f26 0%, #8b1520 100%);
+  color: #fff;
+  padding: 1rem 1.15rem;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.jp-dash-sidebar-body {
+  background: #fff;
+}
+
+.jp-dash-sidebar .jp-sidebar-job {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.jp-dash-sidebar .jp-sidebar-job:last-of-type {
+  border-bottom: none;
+}
+
+.jp-sidebar-job-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.jp-sidebar-job-title:hover {
+  color: #c61f26;
+}
+
+.jp-sidebar-job-meta {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.jp-sidebar-job-badges {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.jp-sidebar-job-badges .badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.28em 0.55em;
+}
+
+.jp-sidebar-job-deadline {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 0.35rem;
+}
+
+.jp-dash-sidebar .card-footer {
+  background: #fafafa;
+  border-top: 1px solid #eee;
+  padding: 0.75rem 1rem;
+}
+
+.jp-dash-sidebar-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* -------- Candidate profile: view mode + section icons -------- */
+.jp-profile-section-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.jp-profile-section-icon--primary {
+  background: #c61f26;
+}
+
+.jp-profile-section-icon--docs {
+  background: #e35d1e;
+}
+
+.jp-profile-section-icon--refs {
+  background: #5c4d7c;
+}
+
+.jp-ref-view-list .jp-ref-view-block {
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.jp-ref-view-list .jp-ref-view-block:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.jp-ref-slot:last-of-type {
+  margin-bottom: 0 !important;
+}
+
+.jp-doc-notes {
+  border-color: #dee2e6 !important;
+  background: #fafafa;
+}
+
+.jp-doc-rules-list li {
+  margin-bottom: 0.35rem;
+}
+
+.jp-doc-rules-list li:last-child {
+  margin-bottom: 0;
+}
+
+.profile-view-fields {
+  max-width: 48rem;
+}
+
+.profile-view-field {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-view-field:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.profile-view-field:first-child {
+  padding-top: 0;
+}
+
+.profile-view-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  margin-bottom: 0.2rem;
+}
+
+.profile-view-value {
+  font-size: 0.95rem;
+  color: #1a1a1a;
+  word-break: break-word;
 }
 
 /* -------- Typography scale (interior) -------- */

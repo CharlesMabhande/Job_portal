@@ -212,7 +212,7 @@ require_once BASE_PATH . '/includes/header.php';
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label small">Date & Time</label>
-                <input class="form-control" name="scheduled_date" type="datetime-local" required title="Pick date and local time for the interview">
+                <input class="form-control" name="scheduled_date" type="datetime-local" required placeholder="Click to choose date &amp; time" title="Pick date and local time for the interview (use the calendar control)">
             </div>
             <div class="col-12 col-md-2">
                 <label class="form-label small">Type</label>
@@ -267,7 +267,7 @@ require_once BASE_PATH . '/includes/header.php';
                                 <div class="small text-muted"><?php echo escape($i['email']); ?></div>
                             </td>
                             <td><?php echo escape($i['job_title']); ?></td>
-                            <td class="text-muted text-nowrap"><?php echo escape(date('M j, Y g:i A', strtotime($i['scheduled_date']))); ?></td>
+                            <td class="text-muted text-nowrap"><?php echo escape(formatDateTimeDisplay($i['scheduled_date'])); ?></td>
                             <td><?php echo escape($i['interview_type']); ?></td>
                             <td><span class="badge bg-light text-dark border"><?php echo escape($i['status']); ?></span></td>
                             <td class="text-end">
@@ -294,7 +294,7 @@ require_once BASE_PATH . '/includes/header.php';
                                     <input type="hidden" name="interview_id" value="<?php echo $iid; ?>">
                                     <div class="col-12 col-md-3">
                                         <label class="form-label small fw-bold">Date &amp; Time</label>
-                                        <input class="form-control form-control-sm" name="scheduled_date" type="datetime-local" required value="<?php echo escape($dtLocal); ?>">
+                                        <input class="form-control form-control-sm" name="scheduled_date" type="datetime-local" required value="<?php echo escape($dtLocal); ?>" title="Pick date and local time for the interview">
                                     </div>
                                     <div class="col-6 col-md-2">
                                         <label class="form-label small fw-bold">Type</label>
@@ -306,7 +306,7 @@ require_once BASE_PATH . '/includes/header.php';
                                     </div>
                                     <div class="col-6 col-md-2">
                                         <label class="form-label small fw-bold">Duration (min)</label>
-                                        <input class="form-control form-control-sm" type="number" name="duration_minutes" min="1" value="<?php echo (int)$i['duration_minutes']; ?>">
+                                        <input class="form-control form-control-sm" type="number" name="duration_minutes" min="1" value="<?php echo (int)$i['duration_minutes']; ?>" placeholder="e.g. 60" title="Length of the interview in minutes">
                                     </div>
                                     <div class="col-12 col-md-2">
                                         <label class="form-label small fw-bold">Status</label>

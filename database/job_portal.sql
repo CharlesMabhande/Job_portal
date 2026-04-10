@@ -31,6 +31,7 @@ USE `job_portal`;
 
 CREATE TABLE `applications` (
   `application_id` int(11) NOT NULL,
+  `application_ref` varchar(32) DEFAULT NULL,
   `job_id` int(11) NOT NULL,
   `candidate_id` int(11) NOT NULL,
   `cover_letter` text DEFAULT NULL,
@@ -49,9 +50,29 @@ CREATE TABLE `applications` (
 -- Dumping data for table `applications`
 --
 
-INSERT INTO `applications` (`application_id`, `job_id`, `candidate_id`, `cover_letter`, `cv_path`, `certificates_path`, `status`, `applied_at`, `reviewed_by`, `reviewed_at`, `review_notes`, `rejection_reason`, `updated_at`) VALUES
-(1, 1, 3, 'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773999212_bc2e721ff1babd47.pdf', 'Interview Scheduled', '2026-03-20 09:33:32', 2, '2026-03-20 15:00:58', '', '', '2026-03-20 13:30:41'),
-(2, 1, 4, 'mashurotat@gmail.com', 'cv/cv_1775042365_f67b5adfaddd811d.pdf', 'documents/certs_1775042365_277d35c374e7178d.pdf', 'Pending', '2026-04-01 11:20:36', NULL, NULL, NULL, NULL, '2026-04-01 11:20:36');
+INSERT INTO `applications` (`application_id`, `application_ref`, `job_id`, `candidate_id`, `cover_letter`, `cv_path`, `certificates_path`, `status`, `applied_at`, `reviewed_by`, `reviewed_at`, `review_notes`, `rejection_reason`, `updated_at`) VALUES
+(1, 'LSU-2026-000001', 1, 3, 'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773999212_bc2e721ff1babd47.pdf', 'Interview Scheduled', '2026-03-20 09:33:32', 2, '2026-03-20 15:00:58', '', '', '2026-03-20 13:30:41'),
+(2, 'LSU-2026-000002', 1, 4, 'mashurotat@gmail.com', 'cv/cv_1775042365_f67b5adfaddd811d.pdf', 'documents/certs_1775042365_277d35c374e7178d.pdf', 'Pending', '2026-04-01 11:20:36', NULL, NULL, NULL, NULL, '2026-04-01 11:20:36');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `signed_exports`
+--
+
+CREATE TABLE `signed_exports` (
+  `token` char(32) NOT NULL COMMENT 'hex, no separators',
+  `export_type` varchar(64) NOT NULL,
+  `job_id` int(11) DEFAULT NULL,
+  `canonical_sha256` char(64) NOT NULL,
+  `signature_hmac` char(64) NOT NULL,
+  `payload_json` text DEFAULT NULL COMMENT 'Display metadata (job title, counts, …)',
+  `issued_at` datetime NOT NULL,
+  `issued_by_user_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`token`),
+  KEY `idx_signed_exports_job` (`job_id`),
+  KEY `idx_signed_exports_issued` (`issued_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -170,6 +191,7 @@ CREATE TABLE `candidates` (
   `candidate_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `date_of_birth` date DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL COMMENT 'Male, Female, Other',
   `address` text DEFAULT NULL,
   `city` varchar(100) DEFAULT NULL,
   `state` varchar(100) DEFAULT NULL,
@@ -180,6 +202,10 @@ CREATE TABLE `candidates` (
   `cover_letter_template` text DEFAULT NULL,
   `skills` text DEFAULT NULL COMMENT 'JSON array of skills',
   `education` text DEFAULT NULL COMMENT 'JSON array of education',
+  `professional_qualifications` text DEFAULT NULL COMMENT 'JSON: professional quals',
+  `o_level_qualifications` text DEFAULT NULL COMMENT 'JSON: O-Level',
+  `a_level_qualifications` text DEFAULT NULL COMMENT 'JSON: A-Level',
+  `other_certifications` text DEFAULT NULL COMMENT 'JSON: other certs',
   `experience` text DEFAULT NULL COMMENT 'JSON array of experience',
   `profile_completed` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -190,11 +216,29 @@ CREATE TABLE `candidates` (
 -- Dumping data for table `candidates`
 --
 
-INSERT INTO `candidates` (`candidate_id`, `user_id`, `date_of_birth`, `address`, `city`, `state`, `country`, `postal_code`, `cv_path`, `certificates_path`, `cover_letter_template`, `skills`, `education`, `experience`, `profile_completed`, `created_at`, `updated_at`) VALUES
-(1, 2, '1996-11-12', '5029 Skyview', 'Chivhu', 'Mashonaland East', 'Zimbabwe', '00000', 'cv/cv_1772189252_98c4b19a8d008d9c.doc', NULL, NULL, NULL, NULL, NULL, 1, '2026-02-27 10:42:51', '2026-02-27 10:47:32'),
-(2, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-02-27 14:26:08', '2026-02-27 14:26:08'),
-(3, 4, '1999-11-02', '78 Mukoba 6', 'Gweru', 'Midlands', 'Zimbabwe', '00000', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773998170_fc3582c47ea8bdc1.pdf', NULL, NULL, NULL, NULL, 1, '2026-03-20 08:48:27', '2026-03-20 09:33:32'),
-(4, 5, '2000-12-11', '50867 M EX', 'Chivhu', 'Mashonaland East', 'Zimbabwe', '00000', 'cv/cv_1775042365_f67b5adfaddd811d.pdf', 'documents/certs_1775042365_277d35c374e7178d.pdf', NULL, NULL, NULL, NULL, 1, '2026-04-01 11:17:25', '2026-04-01 11:19:25');
+INSERT INTO `candidates` (`candidate_id`, `user_id`, `date_of_birth`, `gender`, `address`, `city`, `state`, `country`, `postal_code`, `cv_path`, `certificates_path`, `cover_letter_template`, `skills`, `education`, `professional_qualifications`, `o_level_qualifications`, `a_level_qualifications`, `other_certifications`, `experience`, `profile_completed`, `created_at`, `updated_at`) VALUES
+(1, 2, '1996-11-12', NULL, '5029 Skyview', 'Chivhu', 'Mashonaland East', 'Zimbabwe', '00000', 'cv/cv_1772189252_98c4b19a8d008d9c.doc', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-02-27 10:42:51', '2026-02-27 10:47:32'),
+(2, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-02-27 14:26:08', '2026-02-27 14:26:08'),
+(3, 4, '1999-11-02', NULL, '78 Mukoba 6', 'Gweru', 'Midlands', 'Zimbabwe', '00000', 'cv/cv_1773999212_6dc04c6c868ddd8a.docx', 'documents/certs_1773998170_fc3582c47ea8bdc1.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-03-20 08:48:27', '2026-03-20 09:33:32'),
+(4, 5, '2000-12-11', NULL, '50867 M EX', 'Chivhu', 'Mashonaland East', 'Zimbabwe', '00000', 'cv/cv_1775042365_f67b5adfaddd811d.pdf', 'documents/certs_1775042365_277d35c374e7178d.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-01 11:17:25', '2026-04-01 11:19:25');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `candidate_references`
+--
+
+CREATE TABLE `candidate_references` (
+  `reference_id` int(11) NOT NULL,
+  `candidate_id` int(11) NOT NULL,
+  `full_name` varchar(200) NOT NULL,
+  `job_title` varchar(200) DEFAULT NULL,
+  `organisation` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `sort_order` smallint(6) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -241,6 +285,7 @@ CREATE TABLE `jobs` (
   `qualifications` text DEFAULT NULL,
   `location` varchar(255) DEFAULT NULL,
   `job_type` enum('Full-time','Part-time','Contract','Internship') DEFAULT 'Full-time',
+  `vacancy_scope` enum('Internal','External') NOT NULL DEFAULT 'External',
   `salary_min` decimal(10,2) DEFAULT NULL,
   `salary_max` decimal(10,2) DEFAULT NULL,
   `posted_by` int(11) NOT NULL COMMENT 'HR user_id',
@@ -258,8 +303,8 @@ CREATE TABLE `jobs` (
 -- Dumping data for table `jobs`
 --
 
-INSERT INTO `jobs` (`job_id`, `title`, `department`, `description`, `requirements`, `qualifications`, `location`, `job_type`, `salary_min`, `salary_max`, `posted_by`, `status`, `approved_by`, `approved_at`, `application_deadline`, `max_applications`, `current_applications`, `created_at`, `updated_at`) VALUES
-(1, 'SOFTWARE DEVELOPER', 'ICTS Department', 'Software developer', 'Developing and Maintaining University Software.', 'BSc Hons in Computer Science or and Related Degree.', 'Main Campus', 'Full-time', NULL, NULL, 2, 'Active', NULL, NULL, '2026-06-06', 0, 2, '2026-03-20 09:24:42', '2026-04-01 11:20:36');
+INSERT INTO `jobs` (`job_id`, `title`, `department`, `description`, `requirements`, `qualifications`, `location`, `job_type`, `vacancy_scope`, `salary_min`, `salary_max`, `posted_by`, `status`, `approved_by`, `approved_at`, `application_deadline`, `max_applications`, `current_applications`, `created_at`, `updated_at`) VALUES
+(1, 'SOFTWARE DEVELOPER', 'ICTS Department', 'Software developer', 'Developing and Maintaining University Software.', 'BSc Hons in Computer Science or and Related Degree.', 'Main Campus', 'Full-time', 'External', NULL, NULL, 2, 'Active', NULL, NULL, '2026-06-06', 0, 2, '2026-03-20 09:24:42', '2026-04-01 11:20:36');
 
 -- --------------------------------------------------------
 
@@ -400,6 +445,7 @@ INSERT INTO `users` (`user_id`, `email`, `password`, `role_id`, `first_name`, `l
 --
 ALTER TABLE `applications`
   ADD PRIMARY KEY (`application_id`),
+  ADD UNIQUE KEY `uq_applications_ref` (`application_ref`),
   ADD UNIQUE KEY `unique_application` (`job_id`,`candidate_id`),
   ADD KEY `candidate_id` (`candidate_id`),
   ADD KEY `status` (`status`),
@@ -420,6 +466,13 @@ ALTER TABLE `audit_logs`
 ALTER TABLE `candidates`
   ADD PRIMARY KEY (`candidate_id`),
   ADD UNIQUE KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `candidate_references`
+--
+ALTER TABLE `candidate_references`
+  ADD PRIMARY KEY (`reference_id`),
+  ADD KEY `candidate_id` (`candidate_id`);
 
 --
 -- Indexes for table `interviews`
@@ -503,6 +556,12 @@ ALTER TABLE `candidates`
   MODIFY `candidate_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT for table `candidate_references`
+--
+ALTER TABLE `candidate_references`
+  MODIFY `reference_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `interviews`
 --
 ALTER TABLE `interviews`
@@ -567,6 +626,12 @@ ALTER TABLE `audit_logs`
 --
 ALTER TABLE `candidates`
   ADD CONSTRAINT `candidates_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `candidate_references`
+--
+ALTER TABLE `candidate_references`
+  ADD CONSTRAINT `candidate_references_ibfk_1` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`candidate_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `interviews`

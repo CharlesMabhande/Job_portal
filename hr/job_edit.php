@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../config/config.php';
 requireRole(['HR', 'SysAdmin']);
 
+require_once BASE_PATH . '/includes/job_summary_table.php';
+
 $db = getDBConnection();
 $jobId = (int)($_GET['job_id'] ?? 0);
 $editing = $jobId > 0;
@@ -22,6 +24,11 @@ $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCSRFToken();
 
+    $vacancyScope = sanitize($_POST['vacancy_scope'] ?? 'External');
+    if ($vacancyScope !== 'Internal' && $vacancyScope !== 'External') {
+        $vacancyScope = 'External';
+    }
+
     $data = [
         'title' => sanitize($_POST['title'] ?? ''),
         'department' => sanitize($_POST['department'] ?? ''),
@@ -30,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'qualifications' => $_POST['qualifications'] ?? '',
         'location' => sanitize($_POST['location'] ?? ''),
         'job_type' => sanitize($_POST['job_type'] ?? 'Full-time'),
+        'vacancy_scope' => $vacancyScope,
         'salary_min' => $_POST['salary_min'] !== '' ? $_POST['salary_min'] : null,
         'salary_max' => $_POST['salary_max'] !== '' ? $_POST['salary_max'] : null,
         'application_deadline' => $_POST['application_deadline'] !== '' ? $_POST['application_deadline'] : null,
@@ -85,6 +93,25 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> <?php echo escape($error); ?></div>
 <?php endif; ?>
 
+<?php if ($editing && $job): ?>
+    <?php
+    $jstEdit = (string)($job['status'] ?? '');
+    $canSummaryEdit = !in_array($jstEdit, ['Draft', 'Cancelled'], true);
+    ?>
+    <?php if ($canSummaryEdit): ?>
+        <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div class="small mb-0">
+                <i class="bi bi-table me-1"></i>
+                <strong>Applicant summary table</strong> — LSU format (name, age, gender, qualifications, experience, salary column, comments). Open to print or save as PDF; download HTML to open in Microsoft Word.
+            </div>
+            <div class="d-flex flex-wrap gap-2 flex-shrink-0">
+                <a class="btn btn-sm btn-outline-primary" href="<?php echo escape(jobSummaryTablePageUrl($jobId, false)); ?>" target="_blank" rel="noopener noreferrer"><i class="bi bi-eye me-1"></i> View</a>
+                <a class="btn btn-sm btn-primary" href="<?php echo escape(jobSummaryTablePageUrl($jobId, true)); ?>"><i class="bi bi-download me-1"></i> Download</a>
+            </div>
+        </div>
+    <?php endif; ?>
+<?php endif; ?>
+
 <form method="post">
     <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
 
@@ -122,6 +149,15 @@ require_once BASE_PATH . '/includes/header.php';
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
+                    <label class="form-label fw-semibold">Vacancy audience</label>
+                    <?php $curScope = vacancyScope($job['vacancy_scope'] ?? 'External'); ?>
+                    <select class="form-select" name="vacancy_scope" title="Internal: typically for current staff; External: open to all applicants">
+                        <option value="External" <?php echo $curScope === 'External' ? 'selected' : ''; ?>>External — open to the public</option>
+                        <option value="Internal" <?php echo $curScope === 'Internal' ? 'selected' : ''; ?>>Internal — staff / internal applicants</option>
+                    </select>
+                    <div class="form-text">Shown on the job list and detail page. Does not block applications by itself.</div>
+                </div>
+                <div class="col-12 col-md-4">
                     <label class="form-label fw-semibold">Salary Min</label>
                     <input class="form-control" name="salary_min" type="number" step="0.01" value="<?php echo escape($job['salary_min'] ?? ''); ?>" placeholder="e.g. 1200.00 (USD/month)">
                 </div>
@@ -131,7 +167,15 @@ require_once BASE_PATH . '/includes/header.php';
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Application Deadline</label>
-                    <input class="form-control" name="application_deadline" type="date" value="<?php echo escape($job['application_deadline'] ?? ''); ?>" title="Last date candidates may apply (YYYY-MM-DD)">
+                    <?php
+                    $__deadlineVal = $job['application_deadline'] ?? '';
+                    if ($__deadlineVal !== '' && strlen((string)$__deadlineVal) > 10) {
+                        $__deadlineVal = substr((string)$__deadlineVal, 0, 10);
+                    }
+                    ?>
+                    <input class="form-control" name="application_deadline" type="date" value="<?php echo escape($__deadlineVal); ?>" title="Pick the last day applications are accepted">
+                    <div class="form-text">Shown across the site as <strong>dd/mm/yyyy</strong>. The calendar may follow your browser; the value is saved as YYYY-MM-DD.</div>
+                    <?php unset($__deadlineVal); ?>
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Max Applications (0 = unlimited)</label>

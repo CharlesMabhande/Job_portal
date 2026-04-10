@@ -19,6 +19,15 @@ date_default_timezone_set('UTC');
 define('BASE_PATH', dirname(__DIR__));
 define('BASE_URL', 'http://localhost/Job_portal');
 
+/**
+ * Optional secret for signed export HMAC (summary tables, etc.). Prefer setting the
+ * environment variable EXPORT_SIGNING_SECRET to a long random value (e.g. openssl rand -hex 32).
+ * If unset, a deterministic fallback is derived from this install path (rotate via env for production).
+ */
+if (!defined('EXPORT_SIGNING_SECRET')) {
+    define('EXPORT_SIGNING_SECRET', '');
+}
+
 /** Public URL to the official Lupane State University logo (place file at assets/img/lupane-logo.png). */
 define('SITE_LOGO_URL', BASE_URL . '/assets/img/lupane-logo.png');
 define('SITE_LOGO_ALT', 'Lupane State University Logo - Building Communities through Knowledge.');
@@ -38,7 +47,8 @@ if (!file_exists(DOCS_DIR)) {
 
 // File upload settings
 define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
-define('ALLOWED_FILE_TYPES', ['pdf', 'doc', 'docx']);
+/** CV and qualifications uploads on candidate profile: PDF only. */
+define('ALLOWED_FILE_TYPES', ['pdf']);
 
 // Security
 define('CSRF_TOKEN_NAME', 'csrf_token');

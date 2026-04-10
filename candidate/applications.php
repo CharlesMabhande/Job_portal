@@ -11,7 +11,7 @@ $stmt->execute([$userId]);
 $candidateId = (int)($stmt->fetch()['candidate_id'] ?? 0);
 
 $stmt = $db->prepare("
-    SELECT a.application_id, a.status, a.applied_at, j.title, j.department, j.location
+    SELECT a.application_id, a.application_ref, a.status, a.applied_at, j.title, j.department, j.location
     FROM applications a
     JOIN jobs j ON a.job_id = j.job_id
     WHERE a.candidate_id = ?
@@ -55,6 +55,7 @@ function statusBadgeClass($status) {
             <table class="table mb-0">
                 <thead>
                     <tr>
+                        <th>Application no.</th>
                         <th>Job Title</th>
                         <th>Department</th>
                         <th>Location</th>
@@ -64,7 +65,7 @@ function statusBadgeClass($status) {
                 </thead>
                 <tbody>
                     <?php if (!$apps): ?>
-                        <tr><td colspan="5" class="text-center py-5">
+                        <tr><td colspan="6" class="text-center py-5">
                             <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
                             <h6 class="text-muted">No applications yet</h6>
                             <p class="text-muted small mb-3">Start exploring available positions and apply today!</p>
@@ -75,6 +76,7 @@ function statusBadgeClass($status) {
                     <?php endif; ?>
                     <?php foreach ($apps as $a): ?>
                         <tr>
+                            <td class="text-nowrap font-monospace small fw-bold" title="Quote this number when contacting HR"><?php echo escape($a['application_ref'] ?? ('#' . (int)$a['application_id'])); ?></td>
                             <td class="fw-semibold"><?php echo escape($a['title']); ?></td>
                             <td class="text-muted"><?php echo escape($a['department'] ?? '-'); ?></td>
                             <td class="text-muted">
@@ -85,7 +87,7 @@ function statusBadgeClass($status) {
                                 <?php endif; ?>
                             </td>
                             <td><span class="status-badge <?php echo statusBadgeClass($a['status']); ?>"><?php echo escape($a['status']); ?></span></td>
-                            <td class="text-muted"><?php echo escape(date('M j, Y', strtotime($a['applied_at']))); ?></td>
+                            <td class="text-muted"><?php echo escape(formatDateDisplay($a['applied_at'])); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

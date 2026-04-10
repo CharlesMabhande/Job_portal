@@ -1,12 +1,17 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
-requireRole(['HR', 'SysAdmin']);
+requireRole(['HR', 'Management', 'SysAdmin']);
 
 $pageTitle = 'Applications';
 $db = getDBConnection();
 $error = null;
+$roleName = (string)($_SESSION['role_name'] ?? '');
+$canMutateApplications = in_array($roleName, ['HR', 'SysAdmin'], true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$canMutateApplications) {
+        redirect('/hr/applications.php', 'You can view applications but cannot update or delete them.', 'error');
+    }
     requireCSRFToken();
     $applicationId = (int)($_POST['application_id'] ?? 0);
     $action = $_POST['action'] ?? 'update';
@@ -44,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rejectionReason = $_POST['rejection_reason'] ?? '';
 
         $stmt = $db->prepare("
-            SELECT a.application_id, a.status AS old_status, j.title AS job_title,
+            SELECT a.application_id, a.application_ref, a.status AS old_status, j.title AS job_title,
                    c.user_id AS candidate_user_id, u.email, u.first_name
             FROM applications a
             JOIN jobs j ON a.job_id = j.job_id
@@ -65,8 +70,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([$status, $notes, $rejectionReason, (int)$_SESSION['user_id'], $applicationId]);
 
+            $ref = !empty($app['application_ref']) ? $app['application_ref'] : ('#' . $applicationId);
             createNotification((int)$app['candidate_user_id'], 'application_status_changed', 'Application Status Updated',
-                "Your application for {$app['job_title']} is now: {$status}", $applicationId, 'application');
+                "Application {$ref} ({$app['job_title']}) is now: {$status}", $applicationId, 'application');
             sendStatusUpdateEmail($app['email'], $app['first_name'], $app['job_title'], $status);
             logAudit('application_status_updated', 'applications', $applicationId, ['status' => $app['old_status']], ['status' => $status]);
 
@@ -85,7 +91,8 @@ if ($statusFilter !== '') {
 $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
 $stmt = $db->prepare("
-    SELECT a.application_id, a.status, a.applied_at,
+    SELECT a.application_id, a.application_ref, a.status, a.applied_at,
+           a.candidate_id,
            a.cv_path AS app_cv_path,
            a.certificates_path AS app_certificates_path,
            c.cv_path AS candidate_cv_path,
@@ -141,7 +148,7 @@ function statusBadgeClass($status) {
 <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
         <h1><i class="bi bi-file-earmark-check me-2"></i>Applications</h1>
-        <p>Review candidates and update application statuses.</p>
+        <p><?php echo $canMutateApplications ? 'Review candidates and update application statuses.' : 'View candidates and applications (read-only).'; ?></p>
     </div>
     <div class="page-actions w-100 w-md-auto">
         <form method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-stretch">
@@ -168,17 +175,19 @@ function statusBadgeClass($status) {
             <table class="table mb-0 table-hr-applications align-middle">
                 <thead>
                     <tr>
+                        <th class="text-nowrap">Ref</th>
                         <th class="hr-apps-th-candidate">Candidate</th>
                         <th class="hr-apps-th-job">Job</th>
                         <th class="text-nowrap">Status</th>
                         <th class="text-nowrap">Applied</th>
                         <th class="hr-apps-th-docs">Documents</th>
+                        <th class="text-nowrap hr-apps-th-profile">Profile</th>
                         <th class="text-end text-nowrap hr-apps-th-action">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$apps): ?>
-                        <tr><td colspan="6" class="text-center py-5">
+                        <tr><td colspan="8" class="text-center py-5">
                             <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
                             <h6 class="text-muted">No applications found</h6>
                         </td></tr>
@@ -190,12 +199,14 @@ function statusBadgeClass($status) {
                         $hasCv = hrHasDocumentPath($cvPath);
                         $hasCert = hrHasDocumentPath($certPath);
                         $appId = (int)$a['application_id'];
+                        $candId = (int)($a['candidate_id'] ?? 0);
                         $fullName = trim($a['first_name'] . ' ' . $a['last_name']);
                         $candTitle = $fullName . ' — ' . $a['email'];
                         $dept = trim($a['department'] ?? '');
                         $jobLine = $a['job_title'] . ($dept !== '' ? ' · ' . $dept : '');
                         ?>
                         <tr class="hr-apps-row">
+                            <td class="text-nowrap small font-monospace fw-semibold"><?php echo escape($a['application_ref'] ?? ('#' . $appId)); ?></td>
                             <td class="hr-apps-td-clip">
                                 <div class="hr-apps-one-line text-truncate" title="<?php echo escape($candTitle); ?>">
                                     <span class="fw-bold"><?php echo escape($fullName); ?></span>
@@ -213,7 +224,7 @@ function statusBadgeClass($status) {
                                 </div>
                             </td>
                             <td class="text-nowrap"><span class="status-badge <?php echo statusBadgeClass($a['status']); ?>"><?php echo escape($a['status']); ?></span></td>
-                            <td class="text-muted text-nowrap"><?php echo escape(date('M j, Y', strtotime($a['applied_at']))); ?></td>
+                            <td class="text-muted text-nowrap"><?php echo escape(formatDateDisplay($a['applied_at'])); ?></td>
                             <td class="hr-apps-td-docs">
                                 <div class="hr-apps-doc-strip">
                                     <?php if ($hasCv): ?>
@@ -238,7 +249,17 @@ function statusBadgeClass($status) {
                                     <?php endif; ?>
                                 </div>
                             </td>
+                            <td class="text-nowrap">
+                                <?php if ($candId > 0): ?>
+                                    <a class="btn btn-sm btn-outline-primary" href="<?php echo escape(BASE_URL . '/hr/candidate-profile.php?candidate_id=' . $candId); ?>" title="View candidate profile">
+                                        <i class="bi bi-person-vcard"></i><span class="d-none d-xl-inline ms-1">Profile</span>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted small">—</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="text-end hr-apps-td-action">
+                                <?php if ($canMutateApplications): ?>
                                 <div class="d-inline-flex flex-nowrap gap-1 align-items-center justify-content-end">
                                     <button class="btn btn-sm btn-outline-primary text-nowrap" type="button" data-bs-toggle="collapse" data-bs-target="#u<?php echo (int)$a['application_id']; ?>" title="Update status">
                                         <i class="bi bi-pencil-square"></i><span class="d-none d-lg-inline ms-1">Update</span>
@@ -252,10 +273,13 @@ function statusBadgeClass($status) {
                                         </button>
                                     </form>
                                 </div>
+                                <?php else: ?>
+                                    <span class="text-muted small">—</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <tr class="collapse" id="u<?php echo (int)$a['application_id']; ?>">
-                            <td colspan="6" style="background: #f3f3f4; border-radius: 12px;">
+                            <td colspan="8" style="background: #f3f3f4; border-radius: 12px;">
                                 <form method="post" class="row g-2 align-items-end p-2">
                                     <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
                                     <input type="hidden" name="action" value="update">

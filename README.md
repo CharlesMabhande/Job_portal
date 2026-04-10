@@ -28,6 +28,14 @@ This project is a **role-based** job application portal for the university:
 
 If your dump does not include a SysAdmin user, create one in the database or register and promote the account via SQL. Older split installs used `database/schema.sql` plus `database/seed_sysadmin.sql`; those files are no longer in this repo.
 
+**Upgrading an older database?** If you see errors about unknown column `vacancy_scope`, run once:
+
+- `database/patches/add_vacancy_scope.sql`
+
+If you see errors about unknown column `application_ref` (application tracking numbers), run once:
+
+- `database/patches/add_application_ref.sql`
+
 ### 2) Configure app
 
 Edit:

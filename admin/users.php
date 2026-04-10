@@ -10,7 +10,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCSRFToken();
     $action = $_POST['action'] ?? 'update_user';
 
-    if ($action === 'reset_password') {
+    if ($action === 'delete_candidate_account') {
+        $delUserId = (int)($_POST['user_id'] ?? 0);
+        if ($delUserId === (int)($_SESSION['user_id'] ?? 0)) {
+            $error = 'You cannot delete your own account.';
+        } else {
+            $result = adminDeleteCandidateUser($delUserId, (int)$_SESSION['user_id']);
+            if (!empty($result['success'])) {
+                redirect('/admin/users.php', $result['message'] ?? 'Candidate account removed.', 'success');
+            }
+            $error = $result['message'] ?? 'Could not delete account.';
+        }
+    } elseif ($action === 'reset_password') {
         $userId = (int)($_POST['user_id'] ?? 0);
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
@@ -60,7 +71,7 @@ require_once BASE_PATH . '/includes/header.php';
 <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
         <h1><i class="bi bi-people-fill me-2"></i>User Management</h1>
-        <p>Assign roles, enable/disable accounts, and reset passwords.</p>
+        <p>Assign roles, enable/disable accounts, reset passwords, and permanently delete candidate accounts when required.</p>
     </div>
     <div class="page-actions">
         <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/admin/dashboard.php">
@@ -91,7 +102,7 @@ require_once BASE_PATH . '/includes/header.php';
                         <tr>
                             <td>
                                 <div class="fw-bold"><?php echo escape($u['first_name'] . ' ' . $u['last_name']); ?></div>
-                                <div class="small text-muted"><?php echo escape(date('M j, Y', strtotime($u['created_at']))); ?></div>
+                                <div class="small text-muted"><?php echo escape(formatDateDisplay($u['created_at'])); ?></div>
                             </td>
                             <td class="text-muted"><?php echo escape($u['email']); ?></td>
                             <td>
@@ -165,6 +176,21 @@ require_once BASE_PATH . '/includes/header.php';
                                             </button>
                                         </div>
                                     </form>
+
+                                    <?php if (($u['role_name'] ?? '') === 'Candidate'): ?>
+                                        <hr class="my-3">
+                                        <p class="small text-muted mb-2">
+                                            <strong>Delete candidate profile:</strong> removes the account, all applications, interviews, uploads, and references. Cannot be undone.
+                                        </p>
+                                        <form method="post" class="d-inline" onsubmit="return confirm('Permanently delete this candidate account and all related data? This cannot be undone.');">
+                                            <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
+                                            <input type="hidden" name="action" value="delete_candidate_account">
+                                            <input type="hidden" name="user_id" value="<?php echo (int)$u['user_id']; ?>">
+                                            <button class="btn btn-sm btn-danger" type="submit">
+                                                <i class="bi bi-trash me-1"></i> Delete candidate account
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

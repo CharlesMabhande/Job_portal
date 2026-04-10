@@ -54,7 +54,7 @@ require_once BASE_PATH . '/includes/header.php';
                             <td class="text-muted"><?php echo escape($l['record_id'] ?? ''); ?></td>
                             <td class="text-muted"><?php echo escape($l['email'] ?? ''); ?></td>
                             <td class="text-muted"><?php echo escape($l['ip_address'] ?? ''); ?></td>
-                            <td class="text-muted"><?php echo escape(date('M j, Y g:i A', strtotime($l['created_at']))); ?></td>
+                            <td class="text-muted"><?php echo escape(formatDateTimeDisplay($l['created_at'])); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

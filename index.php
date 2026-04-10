@@ -12,6 +12,7 @@ $offset = ($page - 1) * $limit;
 $search = trim($_GET['search'] ?? '');
 $filterType = trim($_GET['job_type'] ?? '');
 $filterDept = trim($_GET['department'] ?? '');
+$filterScope = trim($_GET['vacancy_scope'] ?? '');
 
 // Build WHERE clause — active jobs only, and deadline not passed (inclusive of deadline day)
 $where = "status = 'Active' AND " . sqlJobApplicationOpen();
@@ -31,6 +32,10 @@ if ($filterDept !== '') {
     $where .= " AND department = ?";
     $params[] = $filterDept;
 }
+if ($filterScope !== '' && ($filterScope === 'Internal' || $filterScope === 'External')) {
+    $where .= " AND vacancy_scope = ?";
+    $params[] = $filterScope;
+}
 
 // Total count
 $countStmt = $db->prepare("SELECT COUNT(*) AS total FROM jobs WHERE {$where}");
@@ -39,7 +44,7 @@ $total = (int)($countStmt->fetch()['total'] ?? 0);
 $totalPages = max(1, (int)ceil($total / $limit));
 
 // Fetch jobs
-$sql = "SELECT job_id, title, department, location, job_type, created_at, application_deadline, description, max_applications
+$sql = "SELECT job_id, title, department, location, job_type, vacancy_scope, created_at, application_deadline, description, max_applications
         FROM jobs WHERE {$where} ORDER BY created_at DESC LIMIT ? OFFSET ?";
 $stmt = $db->prepare($sql);
 $bindIndex = 1;
@@ -68,6 +73,14 @@ $totalApps = (int)$appsStmt->fetchColumn();
 
 $deptCountStmt = $db->query("SELECT COUNT(DISTINCT department) FROM jobs WHERE {$openSql} AND department IS NOT NULL AND department != ''");
 $totalDepts = (int)$deptCountStmt->fetchColumn();
+
+$paginationFilterQs = http_build_query(array_filter([
+    'search' => $search,
+    'job_type' => $filterType,
+    'department' => $filterDept,
+    'vacancy_scope' => $filterScope,
+], static fn($v) => $v !== null && $v !== ''));
+$paginationPrefix = $paginationFilterQs !== '' ? $paginationFilterQs . '&' : '';
 
 require_once BASE_PATH . '/includes/header.php';
 
@@ -141,11 +154,11 @@ function typeBadgeClass($type) {
                 <i class="fa-solid fa-filter me-2"></i> Apply Filters to Easily Find Your Dream Job
             </div>
             <form method="get" action="<?php echo BASE_URL; ?>/index.php#open-positions" class="row g-2 align-items-end">
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3 col-lg-3">
                     <label class="form-label small fw-bold">Job Title or Keyword</label>
                     <input type="text" class="form-control form-control-sm" name="search" value="<?php echo escape($search); ?>" placeholder="e.g. lecturer, ICT, software, Harare" title="Search job title or description (min. 2 characters)">
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-3 col-lg-2">
                     <label class="form-label small fw-bold">Department</label>
                     <select class="form-select form-select-sm" name="department">
                         <option value="">All Departments</option>
@@ -154,7 +167,7 @@ function typeBadgeClass($type) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-3 col-lg-2">
                     <label class="form-label small fw-bold">Job Type</label>
                     <select class="form-select form-select-sm" name="job_type">
                         <option value="">All Job Types</option>
@@ -163,9 +176,18 @@ function typeBadgeClass($type) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-12 col-md-2 d-grid">
-                    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-magnifying-glass me-1"></i> Search</button>
-                    <?php if ($search !== '' || $filterType !== '' || $filterDept !== ''): ?>
+                <div class="col-12 col-md-3 col-lg-2">
+                    <label class="form-label small fw-bold">Vacancy</label>
+                    <select class="form-select form-select-sm" name="vacancy_scope" title="Internal: staff; External: open to all">
+                        <option value="">All vacancies</option>
+                        <option value="External" <?php echo $filterScope === 'External' ? 'selected' : ''; ?>>External</option>
+                        <option value="Internal" <?php echo $filterScope === 'Internal' ? 'selected' : ''; ?>>Internal</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-12 col-lg-3 d-grid d-lg-block">
+                    <label class="form-label small fw-bold d-none d-lg-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary btn-sm w-100 w-lg-auto"><i class="fa-solid fa-magnifying-glass me-1"></i> Search</button>
+                    <?php if ($search !== '' || $filterType !== '' || $filterDept !== '' || $filterScope !== ''): ?>
                         <a href="<?php echo BASE_URL; ?>/index.php#open-positions" class="btn-clear-filters mt-2"><i class="fa-solid fa-xmark me-1"></i> Clear</a>
                     <?php endif; ?>
                 </div>
@@ -188,6 +210,7 @@ function typeBadgeClass($type) {
             <?php foreach ($jobs as $job):
                 $days = daysLeft($job['application_deadline']);
                 $badgeClass = typeBadgeClass($job['job_type']);
+                $vScope = vacancyScope($job['vacancy_scope'] ?? 'External');
             ?>
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="job-card">
@@ -197,8 +220,11 @@ function typeBadgeClass($type) {
                                     <?php echo escape($job['title']); ?>
                                 </a>
                             </div>
-                            <?php if ($days !== null && $days >= 0): ?>
-                                <span class="badge-deadline <?php echo $days <= 5 ? 'urgent' : ''; ?>"><?php echo $days; ?>d left</span>
+                            <?php if ($days !== null && $days >= 0 && !empty($job['application_deadline'])): ?>
+                                <span class="badge-deadline job-deadline-badge <?php echo $days <= 5 ? 'urgent' : ''; ?>">
+                                    <span class="d-block"><?php echo $days; ?>d left</span>
+                                    <span class="d-block deadline-date-line">Closes <?php echo escape(formatDateDisplay($job['application_deadline'])); ?></span>
+                                </span>
                             <?php endif; ?>
                         </div>
                         <div class="job-card-body">
@@ -208,6 +234,7 @@ function typeBadgeClass($type) {
                                     <span class="meta-item"><i class="fa-solid fa-location-dot"></i><?php echo escape($job['location']); ?></span>
                                 <?php endif; ?>
                                 <span class="meta-item badge-type <?php echo $badgeClass; ?>"><?php echo escape($job['job_type']); ?></span>
+                                <span class="meta-item badge-type <?php echo vacancyScopeBadgeClass($vScope); ?>"><?php echo escape($vScope); ?></span>
                                 <?php if (!empty($job['max_applications']) && (int)$job['max_applications'] > 1): ?>
                                     <span class="meta-item badge-positions"><i class="fa-solid fa-users"></i><?php echo (int)$job['max_applications']; ?> Positions</span>
                                 <?php endif; ?>
@@ -233,7 +260,7 @@ function typeBadgeClass($type) {
                 <ul class="pagination mb-0 flex-wrap justify-content-center">
                     <?php if ($page > 1): ?>
                         <li class="page-item">
-                            <a class="page-link" href="<?php echo BASE_URL; ?>/index.php?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&job_type=<?php echo urlencode($filterType); ?>&department=<?php echo urlencode($filterDept); ?>#open-positions">
+                            <a class="page-link" href="<?php echo BASE_URL; ?>/index.php?<?php echo escape($paginationPrefix); ?>page=<?php echo $page - 1; ?>#open-positions">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </a>
                         </li>
@@ -241,13 +268,13 @@ function typeBadgeClass($type) {
 
                     <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
                         <li class="page-item <?php echo $p === $page ? 'active' : ''; ?>">
-                            <a class="page-link" href="<?php echo BASE_URL; ?>/index.php?page=<?php echo $p; ?>&search=<?php echo urlencode($search); ?>&job_type=<?php echo urlencode($filterType); ?>&department=<?php echo urlencode($filterDept); ?>#open-positions"><?php echo $p; ?></a>
+                            <a class="page-link" href="<?php echo BASE_URL; ?>/index.php?<?php echo escape($paginationPrefix); ?>page=<?php echo $p; ?>#open-positions"><?php echo $p; ?></a>
                         </li>
                     <?php endfor; ?>
 
                     <?php if ($page < $totalPages): ?>
                         <li class="page-item">
-                            <a class="page-link" href="<?php echo BASE_URL; ?>/index.php?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&job_type=<?php echo urlencode($filterType); ?>&department=<?php echo urlencode($filterDept); ?>#open-positions">
+                            <a class="page-link" href="<?php echo BASE_URL; ?>/index.php?<?php echo escape($paginationPrefix); ?>page=<?php echo $page + 1; ?>#open-positions">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </a>
                         </li>

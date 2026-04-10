@@ -90,7 +90,13 @@ function sendWelcomeEmail($email, $firstName) {
 /**
  * Send application confirmation email
  */
-function sendApplicationConfirmation($email, $firstName, $jobTitle) {
+function sendApplicationConfirmation($email, $firstName, $jobTitle, $applicationRef = '') {
+    $refHtml = '';
+    if ($applicationRef !== '') {
+        $r = htmlspecialchars($applicationRef, ENT_QUOTES, 'UTF-8');
+        $refHtml = "<p style='font-size:1.1em;margin:1em 0;'><strong>Application number:</strong> <span style='color:#c61f26;font-family:monospace;'>{$r}</span></p>"
+            . "<p>Quote this number in any enquiry about your application.</p>";
+    }
     $subject = "Application Received - {$jobTitle}";
     $body = "
     <html>
@@ -98,8 +104,9 @@ function sendApplicationConfirmation($email, $firstName, $jobTitle) {
         <h2>Application Received</h2>
         <p>Dear {$firstName},</p>
         <p>Thank you for applying for the position: <strong>{$jobTitle}</strong></p>
+        {$refHtml}
         <p>We have received your application and will review it shortly.</p>
-        <p>You can track your application status in your dashboard.</p>
+        <p>You can track your application status in your dashboard using the application number above.</p>
         <p>Best regards,<br>Lupane State University e-Recruitment Team</p>
         " . emailContactFooterHtml() . "
     </body>
@@ -123,7 +130,7 @@ function sendInterviewScheduledEmail($email, $firstName, $jobTitle, $interviewDa
         <h2>Interview Scheduled</h2>
         <p>Dear {$firstName},</p>
         <p>Your interview for the position <strong>{$jobTitle}</strong> has been scheduled.</p>
-        <p><strong>Date & Time:</strong> " . formatDate($interviewDate, 'F j, Y \a\t g:i A') . "</p>
+        <p><strong>Date & Time:</strong> " . htmlspecialchars(formatDateTimeDisplay($interviewDate), ENT_QUOTES, 'UTF-8') . "</p>
         {$locationText}
         {$linkText}
         <p>Please be prepared and arrive on time.</p>

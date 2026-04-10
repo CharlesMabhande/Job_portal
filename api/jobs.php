@@ -18,6 +18,7 @@ switch ($action) {
         
         $search = $_GET['search'] ?? '';
         $jobType = $_GET['job_type'] ?? '';
+        $vacancyScope = $_GET['vacancy_scope'] ?? '';
         $status = $_GET['status'] ?? 'Active';
         
         $where = ["j.status = ?"];
@@ -35,6 +36,11 @@ switch ($action) {
         if (!empty($jobType)) {
             $where[] = "j.job_type = ?";
             $params[] = $jobType;
+        }
+
+        if ($vacancyScope === 'Internal' || $vacancyScope === 'External') {
+            $where[] = "j.vacancy_scope = ?";
+            $params[] = $vacancyScope;
         }
         
         $whereClause = implode(' AND ', $where);
@@ -116,6 +122,11 @@ switch ($action) {
         requireRole(['HR', 'SysAdmin']);
         requireCSRFToken();
         
+        $vs = sanitize($_POST['vacancy_scope'] ?? 'External');
+        if ($vs !== 'Internal' && $vs !== 'External') {
+            $vs = 'External';
+        }
+
         $data = [
             'title' => sanitize($_POST['title'] ?? ''),
             'department' => sanitize($_POST['department'] ?? ''),
@@ -124,6 +135,7 @@ switch ($action) {
             'qualifications' => $_POST['qualifications'] ?? '',
             'location' => sanitize($_POST['location'] ?? ''),
             'job_type' => sanitize($_POST['job_type'] ?? 'Full-time'),
+            'vacancy_scope' => $vs,
             'salary_min' => $_POST['salary_min'] ?? null,
             'salary_max' => $_POST['salary_max'] ?? null,
             'application_deadline' => $_POST['application_deadline'] ?? null,
@@ -170,6 +182,11 @@ switch ($action) {
             exit;
         }
         
+        $vs = sanitize($_POST['vacancy_scope'] ?? ($oldValues['vacancy_scope'] ?? 'External'));
+        if ($vs !== 'Internal' && $vs !== 'External') {
+            $vs = 'External';
+        }
+
         $data = [
             'title' => sanitize($_POST['title'] ?? $oldValues['title']),
             'department' => sanitize($_POST['department'] ?? $oldValues['department']),
@@ -178,6 +195,7 @@ switch ($action) {
             'qualifications' => $_POST['qualifications'] ?? $oldValues['qualifications'],
             'location' => sanitize($_POST['location'] ?? $oldValues['location']),
             'job_type' => sanitize($_POST['job_type'] ?? $oldValues['job_type']),
+            'vacancy_scope' => $vs,
             'salary_min' => $_POST['salary_min'] ?? $oldValues['salary_min'],
             'salary_max' => $_POST['salary_max'] ?? $oldValues['salary_max'],
             'application_deadline' => $_POST['application_deadline'] ?? $oldValues['application_deadline'],

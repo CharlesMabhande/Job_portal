@@ -25,6 +25,9 @@ require_once BASE_PATH . '/includes/header.php';
         <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/admin/settings.php">
             <i class="bi bi-sliders me-1"></i> Settings
         </a>
+        <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/management/published-jobs.php" title="Per-job applicant summary tables (LSU format)">
+            <i class="bi bi-table me-1"></i> Job summaries
+        </a>
     </div>
 </div>
 

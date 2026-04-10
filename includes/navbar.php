@@ -40,6 +40,8 @@ function navItem($href, $label, $icon = '') {
                     <?php elseif ($isLoggedIn && (int)$roleId === 3): ?>
                         <?php navItem('/management/dashboard.php', 'Management', 'fa-solid fa-gauge-high'); ?>
                         <?php navItem('/management/jobs.php', 'Approvals', 'fa-solid fa-circle-check'); ?>
+                        <?php navItem('/management/published-jobs.php', 'Job summaries', 'fa-solid fa-table'); ?>
+                        <?php navItem('/hr/applications.php', 'Applications', 'fa-solid fa-file-lines'); ?>
                     <?php elseif ($isLoggedIn && (int)$roleId === 4): ?>
                         <?php navItem('/admin/dashboard.php', 'SysAdmin', 'fa-solid fa-gear'); ?>
                         <?php navItem('/admin/users.php', 'Users', 'fa-solid fa-users'); ?>

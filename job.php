@@ -57,15 +57,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $db->prepare("INSERT INTO applications (job_id, candidate_id, cover_letter, cv_path, certificates_path, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
     $stmt->execute([(int)$jobId, (int)$candidate['candidate_id'], $coverLetter, $cvPath, $certificatesPath]);
     $applicationId = (int)$db->lastInsertId();
+    $applicationRef = assignApplicationReference($db, $applicationId);
 
     $stmt = $db->prepare("UPDATE jobs SET current_applications = current_applications + 1 WHERE job_id = ?");
     $stmt->execute([(int)$jobId]);
 
-    createNotification($userId, 'application_submitted', 'Application Submitted', "Your application for {$job['title']} has been submitted.", $applicationId, 'application');
-    sendApplicationConfirmation($_SESSION['email'], $_SESSION['first_name'], $job['title']);
+    createNotification($userId, 'application_submitted', 'Application Submitted', "Your application for {$job['title']} has been submitted. Reference: {$applicationRef}.", $applicationId, 'application');
+    sendApplicationConfirmation($_SESSION['email'], $_SESSION['first_name'], $job['title'], $applicationRef);
     logAudit('application_created', 'applications', $applicationId);
 
-    redirect('/candidate/applications.php', 'Application submitted successfully.', 'success');
+    redirect('/candidate/applications.php', 'Application submitted successfully. Your application number is ' . $applicationRef . '.', 'success');
 }
 
 // Compute deadline info
@@ -85,6 +86,7 @@ $typeBadges = [
     'Internship' => 'badge-internship',
 ];
 $badgeClass = $typeBadges[$job['job_type']] ?? 'badge-fulltime';
+$vScope = vacancyScope($job['vacancy_scope'] ?? 'External');
 
 $candidateApplyDocs = null;
 if (isset($_SESSION['user_id']) && (int)($_SESSION['role_id'] ?? 0) === 1) {
@@ -116,14 +118,16 @@ require_once BASE_PATH . '/includes/header.php';
                 <span><i class="bi bi-geo-alt"></i> <?php echo escape($job['location']); ?></span>
             <?php endif; ?>
             <span class="badge-type <?php echo $badgeClass; ?>"><?php echo escape($job['job_type']); ?></span>
+            <span class="badge-type <?php echo vacancyScopeBadgeClass($vScope); ?>"><?php echo escape($vScope); ?> vacancy</span>
             <?php if (!empty($job['max_applications']) && (int)$job['max_applications'] > 1): ?>
                 <span><i class="bi bi-people"></i> <?php echo (int)$job['max_applications']; ?> Vacancies</span>
             <?php else: ?>
                 <span><i class="bi bi-person"></i> 1 Vacancy</span>
             <?php endif; ?>
-            <?php if ($daysLeft !== null && $daysLeft >= 0): ?>
-                <span class="badge-deadline <?php echo $daysLeft <= 5 ? 'urgent' : ''; ?>">
-                    <i class="bi bi-clock"></i> Closes in <?php echo $daysLeft; ?> day<?php echo $daysLeft !== 1 ? 's' : ''; ?>
+            <?php if ($daysLeft !== null && $daysLeft >= 0 && !empty($job['application_deadline'])): ?>
+                <span class="badge-deadline job-deadline-badge <?php echo $daysLeft <= 5 ? 'urgent' : ''; ?>">
+                    <span class="d-block"><i class="bi bi-clock"></i> <?php echo $daysLeft; ?> day<?php echo $daysLeft !== 1 ? 's' : ''; ?> left</span>
+                    <span class="d-block deadline-date-line">Closes <?php echo escape(formatDateDisplay($job['application_deadline'])); ?></span>
                 </span>
             <?php elseif ($daysLeft === -1): ?>
                 <span class="badge-deadline urgent"><i class="bi bi-clock"></i> Deadline passed</span>
@@ -185,6 +189,10 @@ require_once BASE_PATH . '/includes/header.php';
                             <span class="info-label">Job Type</span>
                             <span class="info-value"><?php echo escape($job['job_type']); ?></span>
                         </div>
+                        <div class="job-info-row">
+                            <span class="info-label">Vacancy</span>
+                            <span class="info-value"><span class="badge-type <?php echo vacancyScopeBadgeClass($vScope); ?>"><?php echo escape($vScope); ?></span></span>
+                        </div>
                         <?php if (!empty($job['location'])): ?>
                         <div class="job-info-row">
                             <span class="info-label">Location</span>
@@ -213,12 +221,12 @@ require_once BASE_PATH . '/includes/header.php';
                         <?php endif; ?>
                         <div class="job-info-row">
                             <span class="info-label">Published</span>
-                            <span class="info-value"><?php echo date('d M Y', strtotime($job['created_at'])); ?></span>
+                            <span class="info-value"><?php echo escape(formatDateDisplay($job['created_at'])); ?></span>
                         </div>
                         <?php if (!empty($job['application_deadline'])): ?>
                         <div class="job-info-row">
                             <span class="info-label">Deadline</span>
-                            <span class="info-value"><?php echo date('d M Y', strtotime($job['application_deadline'])); ?></span>
+                            <span class="info-value"><?php echo escape(formatDateDisplay($job['application_deadline'])); ?></span>
                         </div>
                         <?php endif; ?>
                         <div class="job-info-row">
@@ -267,8 +275,8 @@ require_once BASE_PATH . '/includes/header.php';
                                     ?>
                                     <?php if ($hasCv && $hasCert): ?>
                                         <ul class="small mb-0 ps-3">
-                                            <li>CV: <a href="<?php echo BASE_URL . '/uploads/' . escape($candidateApplyDocs['cv_path']); ?>" target="_blank" rel="noopener noreferrer">View current file</a></li>
-                                            <li>Certificates: <a href="<?php echo BASE_URL . '/uploads/' . escape($candidateApplyDocs['certificates_path']); ?>" target="_blank" rel="noopener noreferrer">View current file</a></li>
+                                            <li>CV: <a href="<?php echo escape(candidateMyDocumentUrl('cv')); ?>" target="_blank" rel="noopener noreferrer">View current file</a></li>
+                                            <li>Certificates: <a href="<?php echo escape(candidateMyDocumentUrl('certs')); ?>" target="_blank" rel="noopener noreferrer">View current file</a></li>
                                         </ul>
                                     <?php else: ?>
                                         <div class="alert alert-warning py-2 px-3 small mb-0">

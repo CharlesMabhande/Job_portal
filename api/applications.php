@@ -81,8 +81,9 @@ switch ($action) {
             VALUES (?, ?, ?, ?, ?, 'Pending')
         ");
         $stmt->execute([$jobId, $candidateId, $coverLetter, $cvPath, $certificatesPath]);
-        $applicationId = $db->lastInsertId();
-        
+        $applicationId = (int)$db->lastInsertId();
+        $applicationRef = assignApplicationReference($db, $applicationId);
+
         // Update job application count
         $stmt = $db->prepare("UPDATE jobs SET current_applications = current_applications + 1 WHERE job_id = ?");
         $stmt->execute([$jobId]);
@@ -93,15 +94,15 @@ switch ($action) {
         $jobTitle = $stmt->fetch()['title'];
         
         // Create notification
-        createNotification($userId, 'application_submitted', 'Application Submitted', 
-            "Your application for {$jobTitle} has been submitted successfully", $applicationId, 'application');
-        
+        createNotification($userId, 'application_submitted', 'Application Submitted',
+            "Your application for {$jobTitle} has been submitted. Reference: {$applicationRef}.", $applicationId, 'application');
+
         // Send email
-        sendApplicationConfirmation($_SESSION['email'], $_SESSION['first_name'], $jobTitle);
-        
+        sendApplicationConfirmation($_SESSION['email'], $_SESSION['first_name'], $jobTitle, $applicationRef);
+
         logAudit('application_created', 'applications', $applicationId);
-        
-        echo json_encode(['success' => true, 'application_id' => $applicationId]);
+
+        echo json_encode(['success' => true, 'application_id' => $applicationId, 'application_ref' => $applicationRef]);
         break;
         
     case 'list':

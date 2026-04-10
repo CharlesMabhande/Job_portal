@@ -26,7 +26,7 @@ $csrf = generateCSRFToken();
 $appCssVersion = @filemtime(BASE_PATH . '/assets/css/app.css') ?: time();
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

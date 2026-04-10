@@ -16,38 +16,86 @@ $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCSRFToken();
 
+    $genderPosted = normalizeCandidateGender($_POST['gender'] ?? '');
+    if ($genderPosted === null) {
+        $error = 'Please select your gender (Male, Female, or Other).';
+    }
+
+    $qmaxPost = candidateProfileQualificationSlotsMax();
+    $wmaxPost = candidateProfileWorkSlotsMax();
     $data = [
         'date_of_birth' => sanitize($_POST['date_of_birth'] ?? ''),
         'address' => sanitize($_POST['address'] ?? ''),
         'city' => sanitize($_POST['city'] ?? ''),
         'state' => sanitize($_POST['state'] ?? ''),
         'country' => sanitize($_POST['country'] ?? ''),
-        'postal_code' => sanitize($_POST['postal_code'] ?? '')
+        'postal_code' => sanitize($_POST['postal_code'] ?? ''),
+        'professional_qualifications' => encodeQualificationRowsFromPost(['pq_inst', 'pq_title', 'pq_grade', 'pq_year'], $qmaxPost),
+        'o_level_qualifications' => encodeQualificationRowsFromPost(['ol_inst', 'ol_subject', 'ol_grade', 'ol_year'], $qmaxPost, ['month' => 'ol_month', 'examining_board' => 'ol_board']),
+        'a_level_qualifications' => encodeQualificationRowsFromPost(['al_inst', 'al_subject', 'al_grade', 'al_year'], $qmaxPost, ['month' => 'al_month', 'examining_board' => 'al_board']),
+        'other_certifications' => encodeQualificationRowsFromPost(['oc_inst', 'oc_title', 'oc_grade', 'oc_year'], $qmaxPost),
+        'experience' => encodeWorkExperienceFromPost($wmaxPost),
     ];
+    if (!$error) {
+        $data['gender'] = $genderPosted;
+    }
 
-    $update = updateCandidateProfile($userId, $data);
-    if (!$update['success']) {
-        $error = $update['message'] ?? 'Failed to update profile';
-    } else {
-        if (isset($_FILES['cv']) && $_FILES['cv']['error'] === UPLOAD_ERR_OK) {
-            $upload = uploadFile($_FILES['cv'], CV_DIR, 'cv');
-            if (!$upload['success']) {
-                $error = $upload['message'] ?? 'CV upload failed';
-            } else {
-                $cvRel = 'cv/' . $upload['filename'];
-                $stmt = $db->prepare("UPDATE candidates SET cv_path = ? WHERE user_id = ?");
-                $stmt->execute([$cvRel, $userId]);
+    $update = ['success' => false];
+    if (!$error) {
+        $update = updateCandidateProfile($userId, $data);
+    }
+    if (!$error) {
+        if (!$update['success']) {
+            $error = $update['message'] ?? 'Failed to update profile';
+        } else {
+            $refRows = [];
+            for ($ri = 0; $ri < candidateReferencesMax(); $ri++) {
+                $refRows[] = [
+                    'full_name' => trim(strip_tags((string)($_POST['ref_name'][$ri] ?? ''))),
+                    'job_title' => trim(strip_tags((string)($_POST['ref_title'][$ri] ?? ''))),
+                    'organisation' => trim(strip_tags((string)($_POST['ref_org'][$ri] ?? ''))),
+                    'email' => trim(strip_tags((string)($_POST['ref_email'][$ri] ?? ''))),
+                    'phone' => trim(strip_tags((string)($_POST['ref_phone'][$ri] ?? ''))),
+                ];
+            }
+            $profileForRef = getCandidateProfile($userId);
+            $refErr = $profileForRef ? saveCandidateReferences((int)$profileForRef['candidate_id'], $refRows) : 'Profile not found.';
+            if ($refErr) {
+                $error = $refErr;
+            }
+        }
+    }
+
+    if (!$error && ($update['success'] ?? false)) {
+        if (isset($_FILES['cv'])) {
+            $cvErr = (int) ($_FILES['cv']['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($cvErr === UPLOAD_ERR_OK) {
+                $upload = uploadFile($_FILES['cv'], CV_DIR, 'cv');
+                if (!$upload['success']) {
+                    $error = $upload['message'] ?? 'CV upload failed';
+                } else {
+                    $cvRel = 'cv/' . $upload['filename'];
+                    $stmt = $db->prepare("UPDATE candidates SET cv_path = ? WHERE user_id = ?");
+                    $stmt->execute([$cvRel, $userId]);
+                }
+            } elseif ($cvErr !== UPLOAD_ERR_NO_FILE) {
+                $error = fileUploadErrorMessage($cvErr) ?? 'CV upload failed.';
             }
         }
 
-        if (!$error && isset($_FILES['certificates']) && $_FILES['certificates']['error'] === UPLOAD_ERR_OK) {
-            $certUpload = uploadFile($_FILES['certificates'], DOCS_DIR, 'certs');
-            if (!$certUpload['success']) {
-                $error = $certUpload['message'] ?? 'Certificates upload failed';
-            } else {
-                $certRel = 'documents/' . $certUpload['filename'];
-                $stmt = $db->prepare("UPDATE candidates SET certificates_path = ? WHERE user_id = ?");
-                $stmt->execute([$certRel, $userId]);
+        if (!$error && isset($_FILES['certificates'])) {
+            $certErr = (int) ($_FILES['certificates']['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($certErr === UPLOAD_ERR_OK) {
+                $certUpload = uploadFile($_FILES['certificates'], DOCS_DIR, 'certs');
+                if (!$certUpload['success']) {
+                    $error = $certUpload['message'] ?? 'Certificates upload failed';
+                } else {
+                    $certRel = 'documents/' . $certUpload['filename'];
+                    $stmt = $db->prepare("UPDATE candidates SET certificates_path = ? WHERE user_id = ?");
+                    $stmt->execute([$certRel, $userId]);
+                }
+            } elseif ($certErr !== UPLOAD_ERR_NO_FILE) {
+                $error = fileUploadErrorMessage($certErr) ?? 'Certificates upload failed.';
             }
         }
 
@@ -56,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$userId]);
             $docCheck = $stmt->fetch(PDO::FETCH_ASSOC);
             if (empty($docCheck['cv_path']) || empty($docCheck['certificates_path'])) {
-                $error = 'Upload both your CV and your combined qualifications document here. These files are stored on your profile and used for every job application—you do not upload them again when applying.';
+                $error = 'Upload both documents: one CV file and one combined qualifications file (each ' . maxUploadSizeLabel() . ' or less). They are stored on your profile and reused for every application.';
             } else {
                 $stmt = $db->prepare("UPDATE candidates SET profile_completed = 1 WHERE user_id = ?");
                 $stmt->execute([$userId]);
@@ -68,112 +116,138 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $profile = getCandidateProfile($userId);
 }
 
+$candidateId = (int)$profile['candidate_id'];
+$references = array_slice(getCandidateReferences($candidateId), 0, candidateReferencesMax());
+$refSlots = [];
+$emptyRef = ['full_name' => '', 'job_title' => '', 'organisation' => '', 'email' => '', 'phone' => ''];
+for ($i = 0; $i < candidateReferencesMax(); $i++) {
+    $refSlots[$i] = $emptyRef;
+    if (isset($references[$i]) && is_array($references[$i])) {
+        foreach (['full_name', 'job_title', 'organisation', 'email', 'phone'] as $rk) {
+            $refSlots[$i][$rk] = (string)($references[$i][$rk] ?? '');
+        }
+    }
+}
+
+$qmax = candidateProfileQualificationSlotsMax();
+$wmax = candidateProfileWorkSlotsMax();
+$emptyQual = ['institution' => '', 'title' => '', 'grade' => '', 'year' => '', 'month' => '', 'examining_board' => ''];
+$padQualSlots = static function (?string $json, int $max) use ($emptyQual): array {
+    $rows = decodeCandidateProfileJsonList($json);
+    $out = [];
+    for ($i = 0; $i < $max; $i++) {
+        $out[$i] = $emptyQual;
+        if (isset($rows[$i]) && is_array($rows[$i])) {
+            foreach (['institution', 'title', 'grade', 'year', 'month', 'examining_board'] as $k) {
+                $out[$i][$k] = (string)($rows[$i][$k] ?? '');
+            }
+        }
+    }
+
+    return $out;
+};
+$pqSlots = $padQualSlots($profile['professional_qualifications'] ?? null, $qmax);
+$olSlots = $padQualSlots($profile['o_level_qualifications'] ?? null, $qmax);
+$alSlots = $padQualSlots($profile['a_level_qualifications'] ?? null, $qmax);
+$ocSlots = $padQualSlots($profile['other_certifications'] ?? null, $qmax);
+
+$emptyWx = ['employer' => '', 'job_title' => '', 'start' => '', 'end' => '', 'current' => false, 'description' => ''];
+$wxRaw = decodeCandidateProfileJsonList($profile['experience'] ?? null);
+$wxSlots = [];
+for ($i = 0; $i < $wmax; $i++) {
+    $wxSlots[$i] = $emptyWx;
+    if (isset($wxRaw[$i]) && is_array($wxRaw[$i])) {
+        $wxSlots[$i]['employer'] = (string)($wxRaw[$i]['employer'] ?? '');
+        $wxSlots[$i]['job_title'] = (string)($wxRaw[$i]['job_title'] ?? '');
+        $wxSlots[$i]['start'] = (string)($wxRaw[$i]['start'] ?? '');
+        $wxSlots[$i]['end'] = (string)($wxRaw[$i]['end'] ?? '');
+        $wxSlots[$i]['current'] = !empty($wxRaw[$i]['current']);
+        $wxSlots[$i]['description'] = (string)($wxRaw[$i]['description'] ?? '');
+    }
+}
+
+$ageYears = ageFromDateOfBirth($profile['date_of_birth'] ?? null);
+$pqView = decodeCandidateProfileJsonList($profile['professional_qualifications'] ?? null);
+$olView = decodeCandidateProfileJsonList($profile['o_level_qualifications'] ?? null);
+$alView = decodeCandidateProfileJsonList($profile['a_level_qualifications'] ?? null);
+$ocView = decodeCandidateProfileJsonList($profile['other_certifications'] ?? null);
+$wxView = decodeCandidateProfileJsonList($profile['experience'] ?? null);
+
+$qualRowHasContent = static function ($r): bool {
+    if (!is_array($r)) {
+        return false;
+    }
+    foreach (['institution', 'title', 'grade', 'year', 'month', 'examining_board'] as $k) {
+        if (trim((string)($r[$k] ?? '')) !== '') {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+$wxRowHasContent = static function ($r): bool {
+    if (!is_array($r)) {
+        return false;
+    }
+    if (!empty($r['current'])) {
+        return true;
+    }
+    foreach (['employer', 'job_title', 'start', 'end', 'description'] as $k) {
+        if (trim((string)($r[$k] ?? '')) !== '') {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+$repeatInitialCount = static function (array $slots, int $max, callable $rowHasContent): int {
+    $last = -1;
+    for ($i = 0; $i < $max; $i++) {
+        if (!isset($slots[$i])) {
+            continue;
+        }
+        if ($rowHasContent($slots[$i])) {
+            $last = $i;
+        }
+    }
+
+    return min($max, max(1, $last + 1));
+};
+
+$pqInitial = $repeatInitialCount($pqSlots, $qmax, $qualRowHasContent);
+$olInitial = $repeatInitialCount($olSlots, $qmax, $qualRowHasContent);
+$alInitial = $repeatInitialCount($alSlots, $qmax, $qualRowHasContent);
+$ocInitial = $repeatInitialCount($ocSlots, $qmax, $qualRowHasContent);
+$wxInitial = $repeatInitialCount($wxSlots, $wmax, $wxRowHasContent);
+
+$refRowHasContent = static function (array $r): bool {
+    foreach (['full_name', 'job_title', 'organisation', 'email', 'phone'] as $k) {
+        if (trim((string)($r[$k] ?? '')) !== '') {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+$refMax = candidateReferencesMax();
+$lastRefIdx = -1;
+for ($ri = 0; $ri < $refMax; $ri++) {
+    if ($refRowHasContent($refSlots[$ri])) {
+        $lastRefIdx = $ri;
+    }
+}
+$refInitial = min($refMax, max(1, $lastRefIdx + 1));
+
+$initialEditMode = $error !== null || (isset($_GET['edit']) && $_GET['edit'] === '1');
+
 require_once BASE_PATH . '/includes/header.php';
-?>
 
-<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-    <div>
-        <h1><i class="bi bi-person-badge me-2"></i>My Profile</h1>
-        <p>Keep your details up-to-date to strengthen your applications.</p>
-    </div>
-    <div class="page-actions">
-        <a class="btn btn-outline-light btn-sm" href="<?php echo BASE_URL; ?>/candidate/dashboard.php">
-            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
-        </a>
-    </div>
-</div>
+$viewVal = function (?string $v): string {
+    $t = trim((string)$v);
+    return $t !== '' ? escape($t) : '<span class="text-muted fst-italic">Not provided</span>';
+};
 
-<?php if ($error): ?>
-    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> <?php echo escape($error); ?></div>
-<?php endif; ?>
-
-<form method="post" enctype="multipart/form-data">
-    <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
-
-    <div class="card animate-in mb-4">
-        <div class="card-body">
-            <h5 class="mb-3 d-flex align-items-center gap-2">
-                <span style="background: #c61f26; color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
-                    <i class="bi bi-person"></i>
-                </span>
-                Personal Details
-            </h5>
-            <div class="row g-3">
-                <div class="col-12 col-md-6">
-                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                    <input type="date" name="date_of_birth" class="form-control" value="<?php echo escape($profile['date_of_birth'] ?? ''); ?>" required title="Pick your date of birth (stored as YYYY-MM-DD)">
-                    <div class="form-text">Example: use the calendar — format saved as <code>YYYY-MM-DD</code>.</div>
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">Country <span class="text-danger">*</span></label>
-                    <input type="text" name="country" class="form-control" value="<?php echo escape($profile['country'] ?? ''); ?>" required placeholder="e.g. Zimbabwe" title="Full country name">
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Street Address <span class="text-danger">*</span></label>
-                    <textarea name="address" class="form-control" rows="2" required placeholder="e.g. 12 Main Street, CBD, near City Hall"><?php echo escape($profile['address'] ?? ''); ?></textarea>
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">City <span class="text-danger">*</span></label>
-                    <input type="text" name="city" class="form-control" value="<?php echo escape($profile['city'] ?? ''); ?>" required placeholder="e.g. Lupane, Bulawayo, Harare">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">State / Province <span class="text-danger">*</span></label>
-                    <input type="text" name="state" class="form-control" value="<?php echo escape($profile['state'] ?? ''); ?>" required placeholder="e.g. Matabeleland North, Harare Province">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">Postal Code <span class="text-danger">*</span></label>
-                    <input type="text" name="postal_code" class="form-control" value="<?php echo escape($profile['postal_code'] ?? ''); ?>" required placeholder="e.g. 00000, P.O. Box 170">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card animate-in mb-4" style="animation-delay: .1s;">
-        <div class="card-body">
-            <h5 class="mb-3 d-flex align-items-center gap-2">
-                <span style="background: #E35D1E; color: #fff; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;">
-                    <i class="bi bi-file-earmark-arrow-up"></i>
-                </span>
-                Documents
-            </h5>
-            <p class="text-muted small mb-3">Upload and maintain your documents here only. When you apply for a job, the system attaches <strong>these same files</strong> automatically—no re-upload on each application.</p>
-            <div class="row g-3">
-                <div class="col-12 col-md-6">
-                    <label class="form-label">CV <span class="text-danger">*</span></label>
-                    <input type="file" name="cv" class="form-control" accept=".pdf,.doc,.docx">
-                    <div class="form-text">
-                        <?php if (!empty($profile['cv_path'])): ?>
-                            <i class="bi bi-check-circle text-success me-1"></i>
-                            Current: <a href="<?php echo BASE_URL . '/uploads/' . escape($profile['cv_path']); ?>" target="_blank" rel="noreferrer">View CV</a>
-                        <?php else: ?>
-                            <i class="bi bi-exclamation-circle text-warning me-1"></i> No CV yet. <strong>Example:</strong> one file named like <code>YourName_CV.pdf</code> (PDF, DOC, or DOCX; max 5MB).
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">Qualifications / Certificates <span class="text-danger">*</span></label>
-                    <input type="file" name="certificates" class="form-control" accept=".pdf,.doc,.docx">
-                    <div class="form-text">
-                        <?php if (!empty($profile['certificates_path'])): ?>
-                            <i class="bi bi-check-circle text-success me-1"></i>
-                            Current: <a href="<?php echo BASE_URL . '/uploads/' . escape($profile['certificates_path']); ?>" target="_blank" rel="noreferrer">View Certificates</a>
-                        <?php else: ?>
-                            <i class="bi bi-exclamation-circle text-warning me-1"></i> No certificates yet. <strong>Example:</strong> one combined PDF <code>Qualifications_Certificates.pdf</code> (PDF, DOC, or DOCX; max 5MB).
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-between">
-        <button class="btn btn-primary btn-lg" type="submit">
-            <i class="bi bi-check-lg me-1"></i> Save Profile
-        </button>
-        <a class="btn btn-outline-primary" href="<?php echo BASE_URL; ?>/index.php">
-            <i class="bi bi-search me-1"></i> Browse Jobs
-        </a>
-    </div>
-</form>
-
-<?php require_once BASE_PATH . '/includes/footer.php'; ?>
+require __DIR__ . '/profile_view_edit.php';

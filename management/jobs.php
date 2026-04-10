@@ -79,7 +79,7 @@ require_once BASE_PATH . '/includes/header.php';
                             <td class="fw-bold"><?php echo escape($j['title']); ?></td>
                             <td class="text-muted"><?php echo escape($j['department'] ?? '-'); ?></td>
                             <td class="text-muted"><?php echo escape($j['posted_by_name'] ?? ''); ?></td>
-                            <td class="text-muted"><?php echo escape(date('M j, Y', strtotime($j['created_at']))); ?></td>
+                            <td class="text-muted"><?php echo escape(formatDateDisplay($j['created_at'])); ?></td>
                             <td class="text-end">
                                 <form method="post" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
