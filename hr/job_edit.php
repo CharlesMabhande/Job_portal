@@ -178,7 +178,7 @@ require_once BASE_PATH . '/includes/header.php';
                     <?php unset($__deadlineVal); ?>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold">Max Applications (0 = unlimited)</label>
+                    <label class="form-label fw-semibold">Available Positions</label>
                     <input class="form-control" name="max_applications" type="number" value="<?php echo escape($job['max_applications'] ?? 0); ?>" placeholder="e.g. 50 (use 0 for no limit)" title="0 means unlimited applications">
                 </div>
             </div>

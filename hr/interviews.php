@@ -6,6 +6,18 @@ $pageTitle = 'Interviews';
 $db = getDBConnection();
 $error = null;
 
+/**
+ * Parse duration from hour/minute fields while remaining compatible with legacy duration_minutes.
+ */
+function parseInterviewDurationMinutes(array $src): int {
+    $hours = (int)($src['duration_hours'] ?? 0);
+    $mins = (int)($src['duration_mins'] ?? $src['duration_minutes'] ?? 0);
+    $hours = max(0, $hours);
+    $mins = max(0, min(59, $mins));
+    $total = ($hours * 60) + $mins;
+    return max(1, $total > 0 ? $total : 60);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCSRFToken();
     $action = $_POST['action'] ?? 'schedule';
@@ -48,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $interviewId = (int)($_POST['interview_id'] ?? 0);
         $scheduledDate = $_POST['scheduled_date'] ?? '';
         $interviewType = sanitize($_POST['interview_type'] ?? 'In-person');
-        $duration = max(1, (int)($_POST['duration_minutes'] ?? 60));
+        $duration = parseInterviewDurationMinutes($_POST);
         $location = sanitize($_POST['location'] ?? '');
         $meetingLink = sanitize($_POST['meeting_link'] ?? '');
         $status = sanitize($_POST['status'] ?? 'Scheduled');
@@ -96,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $applicationId = (int)($_POST['application_id'] ?? 0);
         $scheduledDate = $_POST['scheduled_date'] ?? '';
         $interviewType = sanitize($_POST['interview_type'] ?? 'In-person');
-        $duration = (int)($_POST['duration_minutes'] ?? 60);
+        $duration = parseInterviewDurationMinutes($_POST);
         $location = sanitize($_POST['location'] ?? '');
         $meetingLink = sanitize($_POST['meeting_link'] ?? '');
 
@@ -222,9 +234,13 @@ require_once BASE_PATH . '/includes/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-12 col-md-2">
-                <label class="form-label small">Duration (min)</label>
-                <input class="form-control" name="duration_minutes" type="number" value="60" placeholder="e.g. 60" title="Length of the interview in minutes">
+            <div class="col-6 col-md-1">
+                <label class="form-label small">Hours</label>
+                <input class="form-control" name="duration_hours" type="number" min="0" value="1" placeholder="e.g. 1" title="Interview duration hours">
+            </div>
+            <div class="col-6 col-md-1">
+                <label class="form-label small">Minutes</label>
+                <input class="form-control" name="duration_mins" type="number" min="0" max="59" value="0" placeholder="e.g. 30" title="Interview duration minutes (0-59)">
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label small">Location / Link</label>
@@ -260,6 +276,8 @@ require_once BASE_PATH . '/includes/header.php';
                         <?php
                         $iid = (int)$i['interview_id'];
                         $dtLocal = date('Y-m-d\TH:i', strtotime($i['scheduled_date']));
+                        $durHours = intdiv(max(1, (int)$i['duration_minutes']), 60);
+                        $durMins = max(1, (int)$i['duration_minutes']) % 60;
                         ?>
                         <tr>
                             <td>
@@ -304,9 +322,13 @@ require_once BASE_PATH . '/includes/header.php';
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
-                                    <div class="col-6 col-md-2">
-                                        <label class="form-label small fw-bold">Duration (min)</label>
-                                        <input class="form-control form-control-sm" type="number" name="duration_minutes" min="1" value="<?php echo (int)$i['duration_minutes']; ?>" placeholder="e.g. 60" title="Length of the interview in minutes">
+                                    <div class="col-6 col-md-1">
+                                        <label class="form-label small fw-bold">Hours</label>
+                                        <input class="form-control form-control-sm" type="number" name="duration_hours" min="0" value="<?php echo (int)$durHours; ?>" placeholder="e.g. 1" title="Interview duration hours">
+                                    </div>
+                                    <div class="col-6 col-md-1">
+                                        <label class="form-label small fw-bold">Minutes</label>
+                                        <input class="form-control form-control-sm" type="number" name="duration_mins" min="0" max="59" value="<?php echo (int)$durMins; ?>" placeholder="e.g. 30" title="Interview duration minutes (0-59)">
                                     </div>
                                     <div class="col-12 col-md-2">
                                         <label class="form-label small fw-bold">Status</label>

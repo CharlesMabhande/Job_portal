@@ -12,6 +12,15 @@ header('Content-Type: application/json');
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $db = getDBConnection();
 
+function parseInterviewDurationMinutes(array $src): int {
+    $hours = (int)($src['duration_hours'] ?? 0);
+    $mins = (int)($src['duration_mins'] ?? $src['duration_minutes'] ?? 0);
+    $hours = max(0, $hours);
+    $mins = max(0, min(59, $mins));
+    $total = ($hours * 60) + $mins;
+    return max(1, $total > 0 ? $total : 60);
+}
+
 switch ($action) {
     case 'schedule':
         requireCSRFToken();
@@ -19,7 +28,7 @@ switch ($action) {
         $applicationId = (int)($_POST['application_id'] ?? 0);
         $scheduledDate = $_POST['scheduled_date'] ?? '';
         $interviewType = sanitize($_POST['interview_type'] ?? 'In-person');
-        $duration = (int)($_POST['duration_minutes'] ?? 60);
+        $duration = parseInterviewDurationMinutes($_POST);
         $location = sanitize($_POST['location'] ?? '');
         $meetingLink = sanitize($_POST['meeting_link'] ?? '');
         

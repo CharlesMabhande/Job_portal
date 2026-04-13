@@ -11,9 +11,17 @@ $stmt->execute([$userId]);
 $candidateId = (int)($stmt->fetch()['candidate_id'] ?? 0);
 
 $stmt = $db->prepare("
-    SELECT a.application_id, a.application_ref, a.status, a.applied_at, j.title, j.department, j.location
+    SELECT a.application_id, a.application_ref, a.status, a.applied_at, j.title, j.department, j.location,
+           i.interview_id, i.interview_type, i.scheduled_date, i.duration_minutes, i.location AS interview_location, i.meeting_link, i.status AS interview_status
     FROM applications a
     JOIN jobs j ON a.job_id = j.job_id
+    LEFT JOIN interviews i ON i.interview_id = (
+        SELECT ii.interview_id
+        FROM interviews ii
+        WHERE ii.application_id = a.application_id
+        ORDER BY ii.scheduled_date DESC, ii.interview_id DESC
+        LIMIT 1
+    )
     WHERE a.candidate_id = ?
     ORDER BY a.applied_at DESC
 ");
@@ -86,7 +94,27 @@ function statusBadgeClass($status) {
                                     -
                                 <?php endif; ?>
                             </td>
-                            <td><span class="status-badge <?php echo statusBadgeClass($a['status']); ?>"><?php echo escape($a['status']); ?></span></td>
+                            <td>
+                                <span class="status-badge <?php echo statusBadgeClass($a['status']); ?>"><?php echo escape($a['status']); ?></span>
+                                <?php if (!empty($a['interview_id']) && !empty($a['scheduled_date'])): ?>
+                                    <div class="small text-muted mt-2">
+                                        <div><i class="bi bi-calendar-event me-1"></i><?php echo escape(formatDateTimeDisplay($a['scheduled_date'])); ?></div>
+                                        <div><i class="bi bi-person-video3 me-1"></i><?php echo escape($a['interview_type'] ?: 'Interview'); ?><?php echo !empty($a['duration_minutes']) ? ' - ' . (int)$a['duration_minutes'] . ' min' : ''; ?></div>
+                                        <?php if (!empty($a['interview_location'])): ?>
+                                            <div><i class="bi bi-geo-alt me-1"></i><?php echo escape($a['interview_location']); ?></div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($a['meeting_link'])): ?>
+                                            <div>
+                                                <i class="bi bi-link-45deg me-1"></i>
+                                                <a href="<?php echo escape($a['meeting_link']); ?>" target="_blank" rel="noopener noreferrer">Join meeting link</a>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($a['interview_status'])): ?>
+                                            <div><i class="bi bi-info-circle me-1"></i>Interview status: <?php echo escape($a['interview_status']); ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td class="text-muted"><?php echo escape(formatDateDisplay($a['applied_at'])); ?></td>
                         </tr>
                     <?php endforeach; ?>
