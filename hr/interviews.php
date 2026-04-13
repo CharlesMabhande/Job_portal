@@ -103,6 +103,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('/hr/interviews.php', 'Interview updated.', 'success');
             }
         }
+    } elseif ($action === 'bulk_schedule_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        $scheduledDate = $_POST['scheduled_date'] ?? '';
+        $interviewType = sanitize($_POST['interview_type'] ?? 'In-person');
+        $duration = parseInterviewDurationMinutes($_POST);
+        $location = sanitize($_POST['location'] ?? '');
+        $meetingLink = sanitize($_POST['meeting_link'] ?? '');
+        $allowedType = ['Phone', 'Video', 'In-person', 'Panel'];
+        if (!in_array($interviewType, $allowedType, true)) {
+            $interviewType = 'In-person';
+        }
+
+        if ($jobId < 1 || $scheduledDate === '') {
+            $error = 'Select a job and interview date/time for bulk scheduling.';
+        } else {
+            $eligStmt = $db->prepare("
+                SELECT a.application_id, j.title AS job_title, c.user_id AS candidate_user_id, u.email, u.first_name
+                FROM applications a
+                JOIN jobs j ON a.job_id = j.job_id
+                JOIN candidates c ON a.candidate_id = c.candidate_id
+                JOIN users u ON c.user_id = u.user_id
+                WHERE a.job_id = ?
+                  AND a.status IN ('Pending', 'Under Review', 'Shortlisted')
+                  AND NOT EXISTS (
+                    SELECT 1 FROM interviews i WHERE i.application_id = a.application_id
+                  )
+                ORDER BY a.applied_at ASC
+            ");
+            $eligStmt->execute([$jobId]);
+            $eligibleApps = $eligStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!$eligibleApps) {
+                $error = 'No eligible applications found for that job (only Pending/Under Review/Shortlisted without an existing interview are included).';
+            } else {
+                $created = 0;
+                $mailQueue = [];
+                $jobTitle = (string)($eligibleApps[0]['job_title'] ?? 'selected job');
+                try {
+                    $db->beginTransaction();
+                    $ins = $db->prepare("
+                        INSERT INTO interviews (application_id, scheduled_by, interview_type, scheduled_date, duration_minutes, location, meeting_link, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'Scheduled')
+                    ");
+                    $upd = $db->prepare("UPDATE applications SET status = 'Interview Scheduled' WHERE application_id = ?");
+
+                    foreach ($eligibleApps as $appRow) {
+                        $appId = (int)$appRow['application_id'];
+                        $ins->execute([$appId, (int)$_SESSION['user_id'], $interviewType, $scheduledDate, $duration, $location, $meetingLink]);
+                        $interviewId = (int)$db->lastInsertId();
+                        $upd->execute([$appId]);
+                        createNotification((int)$appRow['candidate_user_id'], 'interview_scheduled', 'Interview Scheduled',
+                            "An interview has been scheduled for your application: {$jobTitle}", $interviewId, 'interview');
+                        $mailQueue[] = [
+                            'email' => (string)$appRow['email'],
+                            'first_name' => (string)$appRow['first_name'],
+                        ];
+                        $created++;
+                    }
+                    $db->commit();
+                } catch (Throwable $e) {
+                    if ($db->inTransaction()) {
+                        $db->rollBack();
+                    }
+                    error_log('Bulk interview schedule failed: ' . $e->getMessage());
+                    $error = 'Could not bulk schedule interviews.';
+                }
+
+                if ($error === null) {
+                    foreach ($mailQueue as $m) {
+                        sendInterviewScheduledEmail($m['email'], $m['first_name'], $jobTitle, $scheduledDate, $location ?: null, $meetingLink ?: null);
+                    }
+                    logAudit('bulk_interviews_scheduled', 'jobs', $jobId, null, [
+                        'job_id' => $jobId,
+                        'scheduled_count' => $created,
+                        'scheduled_date' => $scheduledDate,
+                        'type' => $interviewType,
+                    ]);
+                    redirect('/hr/interviews.php', "Bulk scheduler completed: {$created} interviews created for {$jobTitle}.", 'success');
+                }
+            }
+        }
     } else {
         /* schedule (default) */
         $applicationId = (int)($_POST['application_id'] ?? 0);
@@ -181,6 +262,22 @@ if ($schedulableStmt !== false) {
     $schedulableApplications = $schedulableStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+// Jobs with applicants for bulk scheduling.
+$bulkJobs = [];
+$bulkJobsStmt = $db->query("
+    SELECT j.job_id, j.title, j.department,
+           COUNT(a.application_id) AS total_applications,
+           SUM(CASE WHEN a.status IN ('Pending', 'Under Review', 'Shortlisted') THEN 1 ELSE 0 END) AS pre_interview_count
+    FROM jobs j
+    JOIN applications a ON a.job_id = j.job_id
+    GROUP BY j.job_id, j.title, j.department
+    ORDER BY j.created_at DESC
+    LIMIT 300
+");
+if ($bulkJobsStmt !== false) {
+    $bulkJobs = $bulkJobsStmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 require_once BASE_PATH . '/includes/header.php';
 ?>
 
@@ -249,6 +346,64 @@ require_once BASE_PATH . '/includes/header.php';
             </div>
             <div class="col-12">
                 <button class="btn btn-primary" type="submit" <?php echo !$schedulableApplications ? 'disabled' : ''; ?>>Schedule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h2 class="h5">Bulk Schedule by Job</h2>
+        <p class="small text-muted mb-3">Create interviews for all eligible applicants for one job in a single action.</p>
+        <form method="post" class="row g-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
+            <input type="hidden" name="action" value="bulk_schedule_job">
+            <div class="col-12 col-md-4">
+                <label class="form-label small">Job / Position</label>
+                <select class="form-select" name="job_id" required title="Choose one job to bulk schedule interviews">
+                    <option value="">— Select position —</option>
+                    <?php foreach ($bulkJobs as $job): ?>
+                        <option value="<?php echo (int)$job['job_id']; ?>">
+                            <?php
+                            echo escape(($job['title'] ?? 'Untitled')
+                                . ' — ' . ($job['department'] ?? 'No department')
+                                . ' (Applicants: ' . (int)$job['total_applications']
+                                . ', Eligible: ' . (int)$job['pre_interview_count'] . ')');
+                            ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="form-text small text-muted">Eligible means status is Pending, Under Review, or Shortlisted and no interview exists yet.</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small">Date &amp; Time</label>
+                <input class="form-control" name="scheduled_date" type="datetime-local" required title="Pick one date/time for all selected candidates">
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label small">Type</label>
+                <select class="form-select" name="interview_type">
+                    <?php foreach (['Phone','Video','In-person','Panel'] as $t): ?>
+                        <option value="<?php echo escape($t); ?>"><?php echo escape($t); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-6 col-md-1">
+                <label class="form-label small">Hours</label>
+                <input class="form-control" name="duration_hours" type="number" min="0" value="1" placeholder="1">
+            </div>
+            <div class="col-6 col-md-1">
+                <label class="form-label small">Minutes</label>
+                <input class="form-control" name="duration_mins" type="number" min="0" max="59" value="0" placeholder="30">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small">Location / Link</label>
+                <input class="form-control mb-2" name="location" placeholder="e.g. Main Campus Boardroom">
+                <input class="form-control" name="meeting_link" placeholder="https://...">
+            </div>
+            <div class="col-12">
+                <button class="btn btn-outline-primary" type="submit" <?php echo !$bulkJobs ? 'disabled' : ''; ?>>
+                    <i class="bi bi-collection-play me-1"></i> Bulk Schedule Interviews
+                </button>
             </div>
         </form>
     </div>
