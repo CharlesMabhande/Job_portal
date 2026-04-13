@@ -36,6 +36,7 @@ define('SITE_LOGO_ALT', 'Lupane State University Logo - Building Communities thr
 define('UPLOAD_DIR', BASE_PATH . '/uploads/');
 define('CV_DIR', UPLOAD_DIR . 'cv/');
 define('DOCS_DIR', UPLOAD_DIR . 'documents/');
+define('PROFILE_PHOTO_DIR', UPLOAD_DIR . 'profile_photos/');
 
 // Create upload directories if they don't exist
 if (!file_exists(CV_DIR)) {
@@ -43,6 +44,9 @@ if (!file_exists(CV_DIR)) {
 }
 if (!file_exists(DOCS_DIR)) {
     mkdir(DOCS_DIR, 0755, true);
+}
+if (!file_exists(PROFILE_PHOTO_DIR)) {
+    mkdir(PROFILE_PHOTO_DIR, 0755, true);
 }
 
 // File upload settings

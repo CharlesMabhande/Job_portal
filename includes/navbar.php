@@ -4,6 +4,17 @@
  */
 $roleId = $_SESSION['role_id'] ?? null;
 $isLoggedIn = isset($_SESSION['user_id']);
+$userPhotoUrl = null;
+if ($isLoggedIn && (int)$roleId === 1) {
+    try {
+        $db = getDBConnection();
+        $stmt = $db->prepare("SELECT profile_photo_path FROM candidates WHERE user_id = ?");
+        $stmt->execute([(int)($_SESSION['user_id'] ?? 0)]);
+        $userPhotoUrl = candidateProfilePhotoUrl((string)($stmt->fetchColumn() ?: ''));
+    } catch (Throwable $e) {
+        $userPhotoUrl = null;
+    }
+}
 
 function navItem($href, $label, $icon = '') {
     $url = BASE_URL . $href;
@@ -53,7 +64,11 @@ function navItem($href, $label, $icon = '') {
                 <div class="d-flex gap-2 align-items-center flex-wrap jp-navbar-user">
                     <?php if ($isLoggedIn): ?>
                         <span class="user-badge">
-                            <i class="fa-solid fa-circle-user me-1"></i>
+                            <?php if ($userPhotoUrl): ?>
+                                <img src="<?php echo escape($userPhotoUrl); ?>" alt="Profile photo" style="width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:6px;">
+                            <?php else: ?>
+                                <i class="fa-solid fa-circle-user me-1"></i>
+                            <?php endif; ?>
                             <?php echo escape(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')); ?>
                             <span class="opacity-75">(<?php echo escape($_SESSION['role_name'] ?? ''); ?>)</span>
                         </span>

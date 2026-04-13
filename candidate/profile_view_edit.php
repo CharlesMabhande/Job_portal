@@ -91,6 +91,18 @@ $jpQualRowFields = static function (
                 <button type="button" class="btn btn-sm btn-outline-secondary jp-profile-card-edit" title="Edit profile"><i class="bi bi-pencil-square"></i></button>
             </div>
             <div class="profile-view-fields">
+                <?php if (!empty($hasProfilePhotoColumn)): ?>
+                    <div class="profile-view-field">
+                        <div class="profile-view-label">Profile photo</div>
+                        <div class="profile-view-value">
+                            <?php if (!empty($profile['profile_photo_path'])): ?>
+                                <img src="<?php echo escape(candidateProfilePhotoUrl((string)$profile['profile_photo_path']) ?? ''); ?>" alt="Profile photo" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #eee;">
+                            <?php else: ?>
+                                <span class="text-muted fst-italic">Not uploaded</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
                 <div class="profile-view-field"><div class="profile-view-label">Full name</div><div class="profile-view-value"><?php echo $viewVal(trim(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? ''))); ?></div></div>
                 <div class="profile-view-field"><div class="profile-view-label">Email</div><div class="profile-view-value"><?php echo $viewVal($profile['email'] ?? null); ?></div></div>
                 <div class="profile-view-field"><div class="profile-view-label">Phone</div><div class="profile-view-value"><?php echo $viewVal($profile['phone'] ?? null); ?></div></div>
@@ -264,6 +276,27 @@ $jpQualRowFields = static function (
 <div id="profile-edit-panel" class="<?php echo $initialEditMode ? '' : 'd-none'; ?>">
 <form method="post" enctype="multipart/form-data" id="profile-edit-form">
     <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
+    <?php if (!empty($hasProfilePhotoColumn)): ?>
+        <div class="card animate-in mb-4">
+            <div class="card-body">
+                <h5 class="mb-3 d-flex align-items-center gap-2"><span class="jp-profile-section-icon jp-profile-section-icon--primary"><i class="bi bi-camera"></i></span> Profile photo</h5>
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-md-3">
+                        <?php if (!empty($profile['profile_photo_path'])): ?>
+                            <img src="<?php echo escape(candidateProfilePhotoUrl((string)$profile['profile_photo_path']) ?? ''); ?>" alt="Current profile photo" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid #eee;">
+                        <?php else: ?>
+                            <div class="text-muted small">No photo uploaded yet.</div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-12 col-md-9">
+                        <label class="form-label">Upload profile photo</label>
+                        <input type="file" name="profile_photo" id="profile-photo-file" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" data-max-bytes="<?php echo (int) MAX_FILE_SIZE; ?>">
+                        <div class="form-text">Accepted: JPG, PNG, WEBP. Max <?php echo escape(maxUploadSizeLabel()); ?>.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
     <div class="card animate-in mb-4">
         <div class="card-body">
             <h5 class="mb-3 d-flex align-items-center gap-2"><span class="jp-profile-section-icon jp-profile-section-icon--primary"><i class="bi bi-person"></i></span> Personal details</h5>
@@ -512,6 +545,16 @@ $jpQualRowFields = static function (
     }
     bindFileLimit(document.getElementById('profile-cv-file'));
     bindFileLimit(document.getElementById('profile-certificates-file'));
+    function bindImageLimit(input) {
+        if (!input || !maxBytes) return;
+        input.addEventListener('change', function () {
+            var f = input.files && input.files[0];
+            if (!f) return;
+            if (!/\.(jpg|jpeg|png|webp)$/i.test(f.name)) { alert('Only JPG, PNG, or WEBP images are accepted.'); input.value = ''; return; }
+            if (f.size > maxBytes) { alert('File too large. Max ' + maxLabel + '.'); input.value = ''; }
+        });
+    }
+    bindImageLimit(document.getElementById('profile-photo-file'));
     function initProfileRepeatable(root) {
         var rowsWrap = root.querySelector('.jp-repeatable-rows');
         var addBtn = root.querySelector('.jp-repeat-add');

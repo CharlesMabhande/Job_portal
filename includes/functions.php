@@ -517,8 +517,8 @@ function validateFileUpload($file, $allowedTypes = null, $maxSize = null) {
 /**
  * Upload file
  */
-function uploadFile($file, $directory, $prefix = '') {
-    $validation = validateFileUpload($file);
+function uploadFile($file, $directory, $prefix = '', $allowedTypes = null, $maxSize = null) {
+    $validation = validateFileUpload($file, $allowedTypes, $maxSize);
     if (!$validation['success']) {
         return $validation;
     }
@@ -532,6 +532,17 @@ function uploadFile($file, $directory, $prefix = '') {
     }
     
     return ['success' => false, 'message' => 'Failed to upload file'];
+}
+
+/**
+ * Public URL for candidate profile photo, or null if not set.
+ */
+function candidateProfilePhotoUrl(?string $relative): ?string {
+    $relative = str_replace('\\', '/', trim((string)$relative));
+    if ($relative === '' || preg_match('#\.\.|^/#', $relative)) {
+        return null;
+    }
+    return BASE_URL . '/uploads/' . $relative;
 }
 
 /**

@@ -6,10 +6,18 @@ $pageTitle = 'Candidate Dashboard';
 $db = getDBConnection();
 
 $userId = (int)$_SESSION['user_id'];
-$stmt = $db->prepare("SELECT candidate_id FROM candidates WHERE user_id = ?");
-$stmt->execute([$userId]);
-$candidate = $stmt->fetch();
+$candidate = [];
+try {
+    $stmt = $db->prepare("SELECT candidate_id, profile_photo_path FROM candidates WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $candidate = $stmt->fetch() ?: [];
+} catch (Throwable $e) {
+    $stmt = $db->prepare("SELECT candidate_id FROM candidates WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $candidate = $stmt->fetch() ?: [];
+}
 $candidateId = (int)($candidate['candidate_id'] ?? 0);
+$candidatePhotoUrl = candidateProfilePhotoUrl((string)($candidate['profile_photo_path'] ?? ''));
 
 $countsStmt = $db->prepare("
     SELECT
@@ -181,7 +189,13 @@ function statusBadgeClass($status) {
         <div class="jp-dash-sidebar-stack d-flex flex-column gap-3">
             <a class="card jp-dash-profile-card animate-in" href="<?php echo BASE_URL; ?>/candidate/profile.php" aria-label="View my profile">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="jp-dash-profile-avatar" aria-hidden="true"><i class="bi bi-person-circle"></i></div>
+                    <div class="jp-dash-profile-avatar" aria-hidden="true">
+                        <?php if ($candidatePhotoUrl): ?>
+                            <img src="<?php echo escape($candidatePhotoUrl); ?>" alt="My profile photo" style="width:44px;height:44px;border-radius:50%;object-fit:cover;">
+                        <?php else: ?>
+                            <i class="bi bi-person-circle"></i>
+                        <?php endif; ?>
+                    </div>
                     <div class="flex-grow-1 min-w-0">
                         <div class="jp-dash-profile-label text-uppercase text-muted fw-semibold mb-1">My profile</div>
                         <div class="fw-bold text-truncate"><?php echo escape(trim(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? ''))); ?></div>

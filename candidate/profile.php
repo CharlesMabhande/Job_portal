@@ -12,6 +12,13 @@ if (!$profile) {
 }
 
 $error = null;
+$hasProfilePhotoColumn = false;
+try {
+    $colStmt = $db->query("SHOW COLUMNS FROM candidates LIKE 'profile_photo_path'");
+    $hasProfilePhotoColumn = (bool)($colStmt && $colStmt->fetch());
+} catch (Throwable $e) {
+    $hasProfilePhotoColumn = false;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCSRFToken();
@@ -96,6 +103,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } elseif ($certErr !== UPLOAD_ERR_NO_FILE) {
                 $error = fileUploadErrorMessage($certErr) ?? 'Certificates upload failed.';
+            }
+        }
+
+        if (!$error && $hasProfilePhotoColumn && isset($_FILES['profile_photo'])) {
+            $photoErr = (int)($_FILES['profile_photo']['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($photoErr === UPLOAD_ERR_OK) {
+                $photoUpload = uploadFile(
+                    $_FILES['profile_photo'],
+                    PROFILE_PHOTO_DIR,
+                    'photo',
+                    ['jpg', 'jpeg', 'png', 'webp']
+                );
+                if (!$photoUpload['success']) {
+                    $error = $photoUpload['message'] ?? 'Profile photo upload failed.';
+                } else {
+                    $stmt = $db->prepare("SELECT profile_photo_path FROM candidates WHERE user_id = ?");
+                    $stmt->execute([$userId]);
+                    $oldPhotoPath = (string)($stmt->fetchColumn() ?: '');
+                    $photoRel = 'profile_photos/' . $photoUpload['filename'];
+                    $stmt = $db->prepare("UPDATE candidates SET profile_photo_path = ? WHERE user_id = ?");
+                    $stmt->execute([$photoRel, $userId]);
+                    if ($oldPhotoPath !== '' && $oldPhotoPath !== $photoRel) {
+                        deleteUploadRelativePath($oldPhotoPath);
+                    }
+                }
+            } elseif ($photoErr !== UPLOAD_ERR_NO_FILE) {
+                $error = fileUploadErrorMessage($photoErr) ?? 'Profile photo upload failed.';
             }
         }
 

@@ -218,6 +218,7 @@ CREATE TABLE `candidates` (
   `state` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
   `postal_code` varchar(20) DEFAULT NULL,
+  `profile_photo_path` varchar(255) DEFAULT NULL,
   `cv_path` varchar(255) DEFAULT NULL,
   `certificates_path` varchar(255) DEFAULT NULL,
   `cover_letter_template` text DEFAULT NULL,
