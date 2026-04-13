@@ -1,94 +1,122 @@
-# Lupane State University — Online Job Application Portal (PHP 8 + MySQL)
+# Lupane State University — Job Portal (PHP 8 + MySQL)
 
-This project is a **role-based** job application portal for the university:
+Role-based university recruitment system built with procedural PHP and MySQL.
 
-- **Branding:** place the official logo at `assets/img/lupane-logo.png` (navbar, login, footer, and favicon use `SITE_LOGO_URL` in `config/config.php`).
+## Core capabilities
 
-- **Candidate**: profile with CV and qualifications document, apply to jobs (documents reused from profile), track application status
-- **HR**: create/edit jobs, review applications, view CV and certificates inline or download, schedule and manage interviews
-- **Management**: approve job postings before they go live
-- **SysAdmin**: user management, system settings, audit logs
+- **Candidate**
+  - Create and maintain profile (education, experience, qualifications)
+  - Upload CV and supporting documents
+  - Browse active jobs and apply
+  - Track application status and view interview details (date/time, type, duration, location/link)
+- **HR**
+  - Create/edit jobs
+  - Review applications and manage status pipeline
+  - Schedule interviews (single candidate and bulk by position)
+  - Update/delete interviews and notify candidates
+- **Management**
+  - Approve job postings before publishing
+  - Review published jobs and summary views
+- **SysAdmin**
+  - Create users directly in the system and assign roles
+  - Manage user roles/status, reset passwords, and delete candidate accounts
+  - View audit logs and update system settings
 
-## Application deadlines (public visibility)
+## Tech stack
 
-- Jobs must be **Active** to appear on the public list (`index.php`).
-- If a job has an **`application_deadline`**, it is shown to candidates only while **today’s date (server/MySQL `CURDATE()`) is on or before that deadline**. After that, it **disappears** from the homepage, job detail URL, and the public jobs API list; candidates cannot apply (form POST, `job.php`, and `api/applications.php` enforce this).
-- If **`application_deadline` is NULL**, the job stays visible until status changes (no automatic hide by date).
-- **HR / Management / Admin** dashboards still list jobs by status; deadline filtering applies to **public** discovery and applying, not to internal editing screens.
+- PHP 8 (XAMPP-friendly)
+- MySQL / MariaDB (PDO)
+- Bootstrap + custom styling
+- PHPMailer (optional, for SMTP email delivery)
 
-**Timezone:** PHP uses the timezone set in `config/config.php` (default UTC). MySQL `CURDATE()` uses the database connection’s timezone. For consistent “midnight” behavior in Zimbabwe, align PHP and MySQL time zones with your policy.
+## Project structure
+
+- `admin/`, `hr/`, `management/`, `candidate/` - role-based UI modules
+- `api/` - JSON endpoints
+- `includes/` - shared auth, security, helpers, and email functions
+- `config/` - app/bootstrap and DB configuration
+- `database/job_portal.sql` - full schema + seed data
 
 ## Setup (XAMPP / Windows)
 
 ### 1) Database
 
-1. Create a database named `job_portal` (or match the name inside your dump).
+1. Create a database named `job_portal` (or use the name inside the dump).
 2. Import:
    - `database/job_portal.sql`
 
-If your dump does not include a SysAdmin user, create one in the database or register and promote the account via SQL. Older split installs used `database/schema.sql` plus `database/seed_sysadmin.sql`; those files are no longer in this repo.
+### 2) Configure application
 
-**Upgrading an older database?** If you see errors about unknown column `vacancy_scope`, run once:
+Update:
 
-- `database/patches/add_vacancy_scope.sql`
+- `config/database.php` - database host/name/user/password
+- `config/config.php` - `BASE_URL`, SMTP settings, site contact details, branding constants
 
-If you see errors about unknown column `application_ref` (application tracking numbers), run once:
-
-- `database/patches/add_application_ref.sql`
-
-### 2) Configure app
-
-Edit:
-
-- `config/database.php` (DB credentials)
-- `config/config.php` (BASE_URL, **`SITE_CONTACT_*`** constants for address / phone / fax / email + SMTP)
-
-If your folder is `C:\xampp\htdocs\Job_portal`, your base URL is typically:
+Typical local base URL:
 
 - `http://localhost/Job_portal`
 
-### 3) (Optional) Install PHPMailer
-
-From the project folder, run:
+### 3) Install dependencies (optional but recommended)
 
 ```bash
 composer install
 ```
 
-If you skip this step, emails will be **suppressed** (no fatal errors).
+If composer packages are not installed, email sending is safely suppressed (no fatal crash).
 
-### 4) Visit
+### 4) Run
 
 - Public jobs list: `/index.php`
 - Login: `/login.php`
-- Change password (logged-in users): `/change_password.php`
 - Candidate dashboard: `/candidate/dashboard.php`
 - HR dashboard: `/hr/dashboard.php`
 - Management dashboard: `/management/dashboard.php`
 - SysAdmin dashboard: `/admin/dashboard.php`
 
-## JSON API (selected)
+## Roles
 
-Used by parts of the UI and for integrations:
+Default role mapping in DB:
 
-- `api/jobs.php` — list/search jobs (`action=list`, default `status=Active` respects application deadlines), job detail (`action=get`)
-- `api/applications.php` — candidate apply and role-scoped application lists (requires session / CSRF where applicable)
+- Candidate (`role_id = 1`)
+- HR (`role_id = 2`)
+- Management (`role_id = 3`)
+- SysAdmin (`role_id = 4`)
 
-## Default roles
-
-Roles are defined in the database (typically created when you import `job_portal.sql`):
-
-- Candidate (1), HR (2), Management (3), SysAdmin (4)
-
-Use SysAdmin pages to assign roles:
+User and role administration:
 
 - `/admin/users.php`
 
-## Initial SysAdmin login
+## Job visibility and deadlines
 
-Credentials depend on what is inside `job_portal.sql`. If your dump includes the old seed user, it may be:
+- Only jobs with status `Active` are shown publicly.
+- If `application_deadline` is set, a job is visible/applicable only up to that date.
+- If deadline is `NULL`, visibility depends on job status only.
+- Internal role dashboards can still view/manage jobs beyond public deadline filtering.
 
-- **Email**: `admin@university.edu`
-- **Password**: `Admin@12345`
+## Interview scheduling
 
-Change it immediately via `/change_password.php` while logged in, or update the account in the database.
+- Single interview scheduling is available in `/hr/interviews.php`.
+- Bulk interview scheduler can schedule all eligible applicants for one position in one action.
+- Duration input accepts **hours + minutes** and is stored as total minutes in DB (`duration_minutes`).
+
+## Selected API endpoints
+
+- `api/auth.php` - login/register/session actions
+- `api/jobs.php` - list/get/create/update/delete/approve jobs (role-protected by action)
+- `api/applications.php` - apply/list/update status
+- `api/interviews.php` - schedule and list interview records
+
+## Security and auditing
+
+- Role guards via `requireRole(...)`
+- CSRF protection for POST requests
+- Password hashing with bcrypt
+- Audit trail in `audit_logs` for key system actions
+
+## Branding
+
+Place the official logo at:
+
+- `assets/img/lupane-logo.png`
+
+Logo usage is controlled through branding constants in `config/config.php` (for navbar, login, footer, favicon).
