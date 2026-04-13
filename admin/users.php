@@ -10,7 +10,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCSRFToken();
     $action = $_POST['action'] ?? 'update_user';
 
-    if ($action === 'delete_candidate_account') {
+    if ($action === 'create_user') {
+        $email = trim((string)($_POST['email'] ?? ''));
+        $firstName = trim((string)($_POST['first_name'] ?? ''));
+        $lastName = trim((string)($_POST['last_name'] ?? ''));
+        $phone = trim((string)($_POST['phone'] ?? ''));
+        $roleId = (int)($_POST['role_id'] ?? 1);
+        $password = (string)($_POST['password'] ?? '');
+        $confirmPassword = (string)($_POST['confirm_password'] ?? '');
+
+        if ($password !== $confirmPassword) {
+            $error = 'Password and confirm password do not match.';
+        } else {
+            $result = adminCreateUser($email, $password, $firstName, $lastName, $phone, $roleId, (int)($_SESSION['user_id'] ?? 0));
+            if (!empty($result['success'])) {
+                redirect('/admin/users.php', 'User account created successfully.', 'success');
+            }
+            $error = $result['message'] ?? 'Could not create user account.';
+        }
+    } elseif ($action === 'delete_candidate_account') {
         $delUserId = (int)($_POST['user_id'] ?? 0);
         if ($delUserId === (int)($_SESSION['user_id'] ?? 0)) {
             $error = 'You cannot delete your own account.';
@@ -83,6 +101,56 @@ require_once BASE_PATH . '/includes/header.php';
 <?php if ($error): ?>
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> <?php echo escape($error); ?></div>
 <?php endif; ?>
+
+<div class="card animate-in mb-3">
+    <div class="card-body">
+        <h5 class="mb-3"><i class="bi bi-person-plus me-1"></i> Add User</h5>
+        <form method="post" class="row g-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
+            <input type="hidden" name="action" value="create_user">
+
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">First Name</label>
+                <input type="text" class="form-control form-control-sm" name="first_name" required maxlength="100">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">Last Name</label>
+                <input type="text" class="form-control form-control-sm" name="last_name" required maxlength="100">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">Email</label>
+                <input type="email" class="form-control form-control-sm" name="email" required maxlength="255">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">Phone (optional)</label>
+                <input type="text" class="form-control form-control-sm" name="phone" maxlength="20">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">Role</label>
+                <select class="form-select form-select-sm" name="role_id" required>
+                    <?php foreach ($roles as $r): ?>
+                        <option value="<?php echo (int)$r['role_id']; ?>">
+                            <?php echo escape($r['role_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">Password</label>
+                <input type="password" class="form-control form-control-sm" name="password" required minlength="8" maxlength="255">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">Confirm Password</label>
+                <input type="password" class="form-control form-control-sm" name="confirm_password" required minlength="8" maxlength="255">
+            </div>
+            <div class="col-12 col-md-3 text-md-end">
+                <button class="btn btn-sm btn-success" type="submit">
+                    <i class="bi bi-plus-lg me-1"></i> Create User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <div class="card animate-in">
     <div class="card-body">

@@ -138,6 +138,82 @@ function adminResetUserPassword($targetUserId, $newPassword) {
 }
 
 /**
+ * SysAdmin: create a new user with a selected role.
+ * Candidate users automatically get a candidates row.
+ *
+ * @return array{success:bool,message?:string,user_id?:int}
+ */
+function adminCreateUser(string $email, string $password, string $firstName, string $lastName, ?string $phone, int $roleId, int $actorUserId): array {
+    $db = getDBConnection();
+
+    $email = trim(strtolower($email));
+    $firstName = trim($firstName);
+    $lastName = trim($lastName);
+    $phone = $phone !== null ? trim($phone) : null;
+    $phone = ($phone === '') ? null : $phone;
+
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'message' => 'Enter a valid email address.'];
+    }
+    if ($firstName === '' || $lastName === '') {
+        return ['success' => false, 'message' => 'First name and last name are required.'];
+    }
+    if (strlen($password) < 8) {
+        return ['success' => false, 'message' => 'Password must be at least 8 characters.'];
+    }
+    if ($roleId < 1) {
+        return ['success' => false, 'message' => 'Please choose a valid role.'];
+    }
+
+    $stmt = $db->prepare("SELECT role_name FROM roles WHERE role_id = ?");
+    $stmt->execute([$roleId]);
+    $roleName = (string)($stmt->fetchColumn() ?: '');
+    if ($roleName === '') {
+        return ['success' => false, 'message' => 'Selected role does not exist.'];
+    }
+
+    $stmt = $db->prepare("SELECT user_id FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    if ($stmt->fetchColumn()) {
+        return ['success' => false, 'message' => 'A user with this email already exists.'];
+    }
+
+    try {
+        $db->beginTransaction();
+
+        $hashedPassword = hashPassword($password);
+        $verificationToken = generateToken();
+
+        $stmt = $db->prepare("
+            INSERT INTO users (email, password, role_id, first_name, last_name, phone, verification_token, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+        ");
+        $stmt->execute([$email, $hashedPassword, $roleId, $firstName, $lastName, $phone, $verificationToken]);
+        $newUserId = (int)$db->lastInsertId();
+
+        if ($roleName === 'Candidate') {
+            $db->prepare("INSERT INTO candidates (user_id) VALUES (?)")->execute([$newUserId]);
+        }
+
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log('adminCreateUser: ' . $e->getMessage());
+        return ['success' => false, 'message' => 'Could not create user. Please try again.'];
+    }
+
+    logAudit('user_created_by_admin', 'users', $newUserId, null, [
+        'created_by' => $actorUserId,
+        'role_id' => $roleId,
+        'role_name' => $roleName,
+    ]);
+
+    return ['success' => true, 'user_id' => $newUserId];
+}
+
+/**
  * SysAdmin: permanently delete a candidate user account, profile, applications, uploads, and related rows.
  * Adjusts jobs.current_applications before cascade deletes. Cannot delete own account or non-candidates.
  *
