@@ -204,6 +204,27 @@ function statusBadgeClass($status) {
                     <i class="bi bi-chevron-right text-muted flex-shrink-0" aria-hidden="true"></i>
                 </div>
             </a>
+            <div class="card animate-in shadow-sm border-0">
+                <div class="card-body py-2 px-3">
+                    <h6 class="mb-2 d-flex align-items-center gap-2">
+                        <i class="bi bi-journal-richtext text-primary"></i>
+                        Candidate Guide
+                    </h6>
+                    <p class="small text-muted mb-2">Quick guidance while using the dashboard.</p>
+                    <div class="list-group list-group-flush small">
+                        <a class="list-group-item list-group-item-action px-0 py-1" href="<?php echo BASE_URL; ?>/user-guide.php#getting-started"><i class="bi bi-play-circle me-2"></i>Getting Started</a>
+                        <a class="list-group-item list-group-item-action px-0 py-1" href="<?php echo BASE_URL; ?>/user-guide.php#applying-jobs"><i class="bi bi-send-check me-2"></i>Applying for Jobs</a>
+                        <a class="list-group-item list-group-item-action px-0 py-1" href="<?php echo BASE_URL; ?>/user-guide.php#managing-applications"><i class="bi bi-folder-check me-2"></i>Managing Applications</a>
+                        <a class="list-group-item list-group-item-action px-0 py-1" href="<?php echo BASE_URL; ?>/user-guide.php#profile-management"><i class="bi bi-person-vcard me-2"></i>Profile Management</a>
+                        <a class="list-group-item list-group-item-action px-0 py-1" href="<?php echo BASE_URL; ?>/user-guide.php#dashboard-overview"><i class="bi bi-grid-1x2 me-2"></i>Dashboard Overview</a>
+                        <a class="list-group-item list-group-item-action px-0 py-1" href="<?php echo BASE_URL; ?>/user-guide.php#tips"><i class="bi bi-stars me-2"></i>Tips & Best Practices</a>
+                        <a class="list-group-item list-group-item-action px-0 py-1" href="<?php echo BASE_URL; ?>/user-guide.php#faqs"><i class="bi bi-question-circle me-2"></i>FAQs</a>
+                    </div>
+                    <a href="<?php echo BASE_URL; ?>/user-guide.php" class="btn btn-outline-primary btn-sm mt-2">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Open Full Guide
+                    </a>
+                </div>
+            </div>
             <div class="card jp-dash-sidebar animate-in">
             <div class="jp-dash-sidebar-head">
                 <i class="bi bi-briefcase-fill"></i>

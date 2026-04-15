@@ -139,6 +139,8 @@ $wxStaff = staffCandidateWorkRows($profile['experience'] ?? null);
                     <dd class="col-sm-8"><?php echo $ageYears !== null ? (int)$ageYears : '—'; ?></dd>
                     <dt class="col-sm-4 text-muted">Gender</dt>
                     <dd class="col-sm-8"><?php echo escape(trim((string)($profile['gender'] ?? '')) !== '' ? (string)$profile['gender'] : '—'); ?></dd>
+                    <dt class="col-sm-4 text-muted">National ID Number</dt>
+                    <dd class="col-sm-8"><?php echo escape(trim((string)($profile['national_id_number'] ?? '')) !== '' ? (string)$profile['national_id_number'] : '—'); ?></dd>
                     <dt class="col-sm-4 text-muted">Country</dt>
                     <dd class="col-sm-8"><?php echo escape(trim((string)($profile['country'] ?? '')) !== '' ? (string)$profile['country'] : '—'); ?></dd>
                     <dt class="col-sm-4 text-muted">Address</dt>

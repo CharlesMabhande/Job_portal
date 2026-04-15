@@ -110,7 +110,7 @@ $appCssVersion = @filemtime(BASE_PATH . '/assets/css/app.css') ?: time();
 
                 <div class="text-center">
                     <span class="text-muted">Don't have an account?</span>
-                    <a href="<?php echo BASE_URL; ?>/register.php" class="fw-semibold">Register</a>
+                    <a href="<?php echo BASE_URL; ?>/user-guide.php?next=register" class="fw-semibold">Register</a>
                 </div>
 
                 <div class="text-center">

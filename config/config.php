@@ -51,6 +51,8 @@ if (!file_exists(PROFILE_PHOTO_DIR)) {
 
 // File upload settings
 define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
+define('CV_MAX_FILE_SIZE', 2 * 1024 * 1024); // 2MB for CV PDF
+define('CERTIFICATES_MAX_FILE_SIZE', 2 * 1024 * 1024); // 2MB for combined certified certificates PDF
 /** CV and qualifications uploads on candidate profile: PDF only. */
 define('ALLOWED_FILE_TYPES', ['pdf']);
 

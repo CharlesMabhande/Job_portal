@@ -19,25 +19,38 @@ switch ($action) {
         $firstName = sanitize($_POST['first_name'] ?? '');
         $lastName = sanitize($_POST['last_name'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
+        $gender = normalizeCandidateGender($_POST['gender'] ?? '');
+        $nationalIdNumber = sanitize($_POST['national_id_number'] ?? '');
+        $dateOfBirth = sanitize($_POST['date_of_birth'] ?? '');
         
         $errors = validateInput([
             'email' => $email,
             'password' => $password,
             'first_name' => $firstName,
-            'last_name' => $lastName
+            'last_name' => $lastName,
+            'national_id_number' => $nationalIdNumber,
+            'date_of_birth' => $dateOfBirth
         ], [
             'email' => 'required|email',
             'password' => 'required|min:8',
             'first_name' => 'required',
-            'last_name' => 'required'
+            'last_name' => 'required',
+            'national_id_number' => 'required',
+            'date_of_birth' => 'required'
         ]);
+        if ($gender === null) {
+            $errors['gender'] = 'Please select a valid gender.';
+        }
+        if ($dateOfBirth !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateOfBirth)) {
+            $errors['date_of_birth'] = 'Please enter a valid Date of Birth.';
+        }
         
         if (!empty($errors)) {
             echo json_encode(['success' => false, 'errors' => $errors]);
             exit;
         }
         
-        $result = registerUser($email, $password, $firstName, $lastName, $phone);
+        $result = registerUser($email, $password, $firstName, $lastName, $phone, 1, $gender, $nationalIdNumber, $dateOfBirth);
         
         if ($result['success']) {
             sendWelcomeEmail($email, $firstName);

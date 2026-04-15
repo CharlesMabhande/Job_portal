@@ -5,6 +5,8 @@ requireRole(['Candidate']);
 $pageTitle = 'My Profile';
 $db = getDBConnection();
 $userId = (int)$_SESSION['user_id'];
+$cvMaxLabel = (int) max(1, ceil((int) CV_MAX_FILE_SIZE / (1024 * 1024))) . ' MB';
+$certificatesMaxLabel = (int) max(1, ceil((int) CERTIFICATES_MAX_FILE_SIZE / (1024 * 1024))) . ' MB';
 
 $profile = getCandidateProfile($userId);
 if (!$profile) {
@@ -13,11 +15,18 @@ if (!$profile) {
 
 $error = null;
 $hasProfilePhotoColumn = false;
+$hasNationalIdColumn = false;
 try {
     $colStmt = $db->query("SHOW COLUMNS FROM candidates LIKE 'profile_photo_path'");
     $hasProfilePhotoColumn = (bool)($colStmt && $colStmt->fetch());
 } catch (Throwable $e) {
     $hasProfilePhotoColumn = false;
+}
+try {
+    $colStmt = $db->query("SHOW COLUMNS FROM candidates LIKE 'national_id_number'");
+    $hasNationalIdColumn = (bool)($colStmt && $colStmt->fetch());
+} catch (Throwable $e) {
+    $hasNationalIdColumn = false;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -43,6 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'other_certifications' => encodeQualificationRowsFromPost(['oc_inst', 'oc_title', 'oc_grade', 'oc_year'], $qmaxPost),
         'experience' => encodeWorkExperienceFromPost($wmaxPost),
     ];
+    if ($hasNationalIdColumn) {
+        $data['national_id_number'] = sanitize($_POST['national_id_number'] ?? '');
+    }
     if (!$error) {
         $data['gender'] = $genderPosted;
     }
@@ -77,7 +89,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_FILES['cv'])) {
             $cvErr = (int) ($_FILES['cv']['error'] ?? UPLOAD_ERR_NO_FILE);
             if ($cvErr === UPLOAD_ERR_OK) {
-                $upload = uploadFile($_FILES['cv'], CV_DIR, 'cv');
+                $cvSize = (int)($_FILES['cv']['size'] ?? 0);
+                if ($cvSize > (int) CV_MAX_FILE_SIZE) {
+                    $error = 'CV PDF must not exceed ' . $cvMaxLabel . '.';
+                }
+            } elseif ($cvErr !== UPLOAD_ERR_NO_FILE) {
+                $error = fileUploadErrorMessage($cvErr) ?? 'CV upload failed.';
+            }
+            if (!$error && $cvErr === UPLOAD_ERR_OK) {
+                $upload = uploadFile($_FILES['cv'], CV_DIR, 'cv', ['pdf'], (int) CV_MAX_FILE_SIZE);
                 if (!$upload['success']) {
                     $error = $upload['message'] ?? 'CV upload failed';
                 } else {
@@ -85,15 +105,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $db->prepare("UPDATE candidates SET cv_path = ? WHERE user_id = ?");
                     $stmt->execute([$cvRel, $userId]);
                 }
-            } elseif ($cvErr !== UPLOAD_ERR_NO_FILE) {
-                $error = fileUploadErrorMessage($cvErr) ?? 'CV upload failed.';
             }
         }
 
         if (!$error && isset($_FILES['certificates'])) {
             $certErr = (int) ($_FILES['certificates']['error'] ?? UPLOAD_ERR_NO_FILE);
             if ($certErr === UPLOAD_ERR_OK) {
-                $certUpload = uploadFile($_FILES['certificates'], DOCS_DIR, 'certs');
+                $certSize = (int)($_FILES['certificates']['size'] ?? 0);
+                if ($certSize > (int) CERTIFICATES_MAX_FILE_SIZE) {
+                    $error = 'Qualifications PDF must be a combined certified copies document and must not exceed ' . $certificatesMaxLabel . '.';
+                }
+            } elseif ($certErr !== UPLOAD_ERR_NO_FILE) {
+                $error = fileUploadErrorMessage($certErr) ?? 'Certificates upload failed.';
+            }
+            if (!$error && $certErr === UPLOAD_ERR_OK) {
+                $certUpload = uploadFile($_FILES['certificates'], DOCS_DIR, 'certs', ['pdf'], (int) CERTIFICATES_MAX_FILE_SIZE);
                 if (!$certUpload['success']) {
                     $error = $certUpload['message'] ?? 'Certificates upload failed';
                 } else {
@@ -101,8 +127,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $db->prepare("UPDATE candidates SET certificates_path = ? WHERE user_id = ?");
                     $stmt->execute([$certRel, $userId]);
                 }
-            } elseif ($certErr !== UPLOAD_ERR_NO_FILE) {
-                $error = fileUploadErrorMessage($certErr) ?? 'Certificates upload failed.';
             }
         }
 
@@ -138,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$userId]);
             $docCheck = $stmt->fetch(PDO::FETCH_ASSOC);
             if (empty($docCheck['cv_path']) || empty($docCheck['certificates_path'])) {
-                $error = 'Upload both documents: one CV file and one combined qualifications file (each ' . maxUploadSizeLabel() . ' or less). They are stored on your profile and reused for every application.';
+                $error = 'Upload both documents: one CV PDF (' . $cvMaxLabel . ' max) and one combined PDF of certified copies of certificates (' . $certificatesMaxLabel . ' max). They are stored on your profile and reused for every application.';
             } else {
                 $stmt = $db->prepare("UPDATE candidates SET profile_completed = 1 WHERE user_id = ?");
                 $stmt->execute([$userId]);

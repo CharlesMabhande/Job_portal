@@ -8,7 +8,7 @@ $fullWidth = $fullWidth ?? false;
 </main>
 <?php endif; ?>
 
-<footer class="jp-footer">
+<footer class="jp-footer" id="contact-us">
     <div class="container">
         <div class="row g-4">
             <div class="col-lg-4 col-md-6">
@@ -42,7 +42,7 @@ $fullWidth = $fullWidth ?? false;
                 <ul class="footer-links">
                     <li><a href="<?php echo BASE_URL; ?>/index.php"><i class="bi bi-chevron-right"></i> Find Jobs</a></li>
                     <li><a href="<?php echo BASE_URL; ?>/login.php"><i class="bi bi-chevron-right"></i> Track Application</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>/register.php"><i class="bi bi-chevron-right"></i> Register</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>/user-guide.php?next=register"><i class="bi bi-chevron-right"></i> Register</a></li>
                     <li><a href="<?php echo BASE_URL; ?>/login.php"><i class="bi bi-chevron-right"></i> Login</a></li>
                 </ul>
             </div>
@@ -51,7 +51,8 @@ $fullWidth = $fullWidth ?? false;
                 <h5>For Candidates</h5>
                 <ul class="footer-links">
                     <li><a href="<?php echo BASE_URL; ?>/index.php"><i class="bi bi-chevron-right"></i> Browse Vacancies</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>/register.php"><i class="bi bi-chevron-right"></i> Create Account</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>/user-guide.php?next=register"><i class="bi bi-chevron-right"></i> Create Account</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>/user-guide.php"><i class="bi bi-chevron-right"></i> User Guide</a></li>
                     <li><a href="<?php echo BASE_URL; ?>/login.php"><i class="bi bi-chevron-right"></i> Application Status</a></li>
                     <li><a href="<?php echo BASE_URL; ?>/login.php"><i class="bi bi-chevron-right"></i> My Profile</a></li>
                 </ul>

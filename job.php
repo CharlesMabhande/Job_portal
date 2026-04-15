@@ -246,7 +246,7 @@ require_once BASE_PATH . '/includes/header.php';
                             <div class="text-center py-3">
                                 <i class="bi bi-lock display-6 text-muted mb-3 d-block"></i>
                                 <p class="text-muted mb-3">Sign in or create an account to apply for this position.</p>
-                                <a href="<?php echo BASE_URL; ?>/register.php" class="btn btn-primary w-100 mb-2">
+                                <a href="<?php echo BASE_URL; ?>/user-guide.php?next=register" class="btn btn-primary w-100 mb-2">
                                     <i class="bi bi-person-plus me-1"></i> Register to Apply
                                 </a>
                                 <a href="<?php echo BASE_URL; ?>/login.php" class="btn btn-outline-primary w-100">

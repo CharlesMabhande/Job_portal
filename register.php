@@ -5,6 +5,10 @@ if (isset($_SESSION['user_id'])) {
     redirect('/dashboard.php');
 }
 
+if (empty($_SESSION['registration_guide_ack'])) {
+    redirect('/user-guide.php?next=register', 'Please read the user guide before creating an account.', 'info');
+}
+
 $pageTitle = 'Register - Lupane State University Job Portal';
 $error = null;
 
@@ -15,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lastName  = sanitize($_POST['last_name'] ?? '');
     $email     = sanitize($_POST['email'] ?? '');
     $phone     = sanitize($_POST['phone'] ?? '');
+    $gender    = normalizeCandidateGender($_POST['gender'] ?? '');
+    $nationalIdNumber = sanitize($_POST['national_id_number'] ?? '');
+    $dateOfBirth = sanitize($_POST['date_of_birth'] ?? '');
     $password  = $_POST['password'] ?? '';
     $confirmPassword = $_POST['confirm_password'] ?? '';
 
@@ -24,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'first_name' => $firstName,
         'last_name' => $lastName,
         'phone' => $phone,
+        'national_id_number' => $nationalIdNumber,
+        'date_of_birth' => $dateOfBirth,
         'confirm_password' => $confirmPassword,
     ], [
         'email' => 'required|email',
@@ -31,18 +40,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'first_name' => 'required',
         'last_name' => 'required',
         'phone' => 'required',
+        'national_id_number' => 'required',
+        'date_of_birth' => 'required',
         'confirm_password' => 'required'
     ]);
 
     if ($password !== $confirmPassword) {
         $errors['confirm_password'] = 'Passwords do not match';
     }
+    if ($gender === null) {
+        $errors['gender'] = 'Please select a valid gender.';
+    }
+    if ($dateOfBirth !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateOfBirth)) {
+        $errors['date_of_birth'] = 'Please enter a valid Date of Birth.';
+    }
 
     if ($errors) {
         $error = implode(' ', array_values($errors));
     } else {
-        $result = registerUser($email, $password, $firstName, $lastName, $phone, 1);
+        $result = registerUser($email, $password, $firstName, $lastName, $phone, 1, $gender, $nationalIdNumber, $dateOfBirth);
         if ($result['success']) {
+            unset($_SESSION['registration_guide_ack']);
             sendWelcomeEmail($email, $firstName);
             loginUser($email, $password);
             redirect('/candidate/dashboard.php', 'Account created successfully.', 'success');
@@ -113,6 +131,34 @@ require_once BASE_PATH . '/includes/header.php';
                         <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
                         <input type="text" name="phone" class="form-control" placeholder="e.g. +263 77 123 4567" required title="Include country code; spaces optional"
                                value="<?php echo escape($_POST['phone'] ?? ''); ?>">
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Gender <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-gender-ambiguous"></i></span>
+                        <select name="gender" class="form-select" required title="Select your gender">
+                            <option value="">Select…</option>
+                            <?php foreach (candidateGenderOptions() as $g): ?>
+                                <option value="<?php echo escape($g); ?>"<?php echo (($_POST['gender'] ?? '') === $g) ? ' selected' : ''; ?>><?php echo escape($g); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">National ID Number <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-card-text"></i></span>
+                        <input type="text" name="national_id_number" class="form-control" maxlength="50" placeholder="e.g. 12-3456789 A12" required title="Enter your National ID Number"
+                               value="<?php echo escape($_POST['national_id_number'] ?? ''); ?>">
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Date of Birth <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-calendar-date"></i></span>
+                        <input type="date" name="date_of_birth" class="form-control" required title="Select your date of birth"
+                               value="<?php echo escape($_POST['date_of_birth'] ?? ''); ?>">
                     </div>
                 </div>
 

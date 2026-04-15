@@ -58,6 +58,10 @@ function navItem($href, $label, $icon = '') {
                         <?php navItem('/admin/users.php', 'Users', 'fa-solid fa-users'); ?>
                         <?php navItem('/admin/settings.php', 'Settings', 'fa-solid fa-sliders'); ?>
                         <?php navItem('/admin/logs.php', 'Audit Logs', 'fa-solid fa-scroll'); ?>
+                    <?php else: ?>
+                        <?php navItem('/user-guide.php', 'User Guide'); ?>
+                        <?php navItem('/login.php', 'Track Application'); ?>
+                        <?php navItem('/index.php#contact-us', 'Contact Us'); ?>
                     <?php endif; ?>
                 </ul>
 
@@ -82,7 +86,7 @@ function navItem($href, $label, $icon = '') {
                         <a class="btn btn-sm btn-outline-primary" href="<?php echo BASE_URL; ?>/login.php">
                             <i class="fa-solid fa-right-to-bracket me-1"></i> Login
                         </a>
-                        <a class="btn btn-sm btn-primary text-white" href="<?php echo BASE_URL; ?>/register.php">
+                        <a class="btn btn-sm btn-primary text-white" href="<?php echo BASE_URL; ?>/user-guide.php?next=register">
                             <i class="fa-solid fa-user-plus me-1"></i> Register
                         </a>
                     <?php endif; ?>

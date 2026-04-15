@@ -217,6 +217,7 @@ CREATE TABLE `candidates` (
   `city` varchar(100) DEFAULT NULL,
   `state` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
+  `national_id_number` varchar(50) DEFAULT NULL,
   `postal_code` varchar(20) DEFAULT NULL,
   `profile_photo_path` varchar(255) DEFAULT NULL,
   `cv_path` varchar(255) DEFAULT NULL,
@@ -473,6 +474,7 @@ CREATE TABLE `users` (
   `first_name` varchar(100) NOT NULL,
   `last_name` varchar(100) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
+  `ec_number` varchar(50) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `email_verified` tinyint(1) NOT NULL DEFAULT 0,
   `verification_token` varchar(255) DEFAULT NULL,
@@ -596,6 +598,7 @@ ALTER TABLE `system_settings`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `email` (`email`),
+  ADD UNIQUE KEY `uq_users_ec_number` (`ec_number`),
   ADD KEY `role_id` (`role_id`),
   ADD KEY `is_active` (`is_active`);
 

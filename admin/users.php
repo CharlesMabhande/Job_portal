@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $firstName = trim((string)($_POST['first_name'] ?? ''));
         $lastName = trim((string)($_POST['last_name'] ?? ''));
         $phone = trim((string)($_POST['phone'] ?? ''));
+        $ecNumber = trim((string)($_POST['ec_number'] ?? ''));
         $roleId = (int)($_POST['role_id'] ?? 1);
         $password = (string)($_POST['password'] ?? '');
         $confirmPassword = (string)($_POST['confirm_password'] ?? '');
@@ -22,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($password !== $confirmPassword) {
             $error = 'Password and confirm password do not match.';
         } else {
-            $result = adminCreateUser($email, $password, $firstName, $lastName, $phone, $roleId, (int)($_SESSION['user_id'] ?? 0));
+            $result = adminCreateUser($email, $password, $firstName, $lastName, $phone, $roleId, $ecNumber, (int)($_SESSION['user_id'] ?? 0));
             if (!empty($result['success'])) {
                 redirect('/admin/users.php', 'User account created successfully.', 'success');
             }
@@ -61,22 +62,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $userId = (int)($_POST['user_id'] ?? 0);
         $roleId = (int)($_POST['role_id'] ?? 1);
+        $ecNumber = trim((string)($_POST['ec_number'] ?? ''));
+        $ecNumber = $ecNumber !== '' ? $ecNumber : null;
         $isActive = isset($_POST['is_active']) ? 1 : 0;
 
         if ($userId === (int)($_SESSION['user_id'] ?? 0)) {
             $error = 'You cannot change your own role/status.';
         } else {
-            $stmt = $db->prepare("UPDATE users SET role_id = ?, is_active = ? WHERE user_id = ?");
-            $stmt->execute([$roleId, $isActive, $userId]);
-            logAudit('user_updated_by_sysadmin', 'users', $userId, null, ['role_id' => $roleId, 'is_active' => $isActive]);
-            redirect('/admin/users.php', 'User updated.', 'success');
+            $roleStmt = $db->prepare("SELECT role_name FROM roles WHERE role_id = ?");
+            $roleStmt->execute([$roleId]);
+            $roleName = (string)($roleStmt->fetchColumn() ?: '');
+            if ($roleName === '') {
+                $error = 'Selected role does not exist.';
+            } elseif (in_array($roleName, ['HR', 'Management'], true) && $ecNumber === null) {
+                $error = 'EC Number is required for HR and Management users.';
+            } elseif (!in_array($roleName, ['HR', 'Management'], true) && $ecNumber !== null) {
+                $error = 'EC Number is only allowed for HR and Management users.';
+            } elseif ($ecNumber !== null && strlen($ecNumber) > 50) {
+                $error = 'EC Number must be at most 50 characters.';
+            } else {
+                if ($ecNumber !== null) {
+                    $ecStmt = $db->prepare("SELECT user_id FROM users WHERE ec_number = ? AND user_id <> ? LIMIT 1");
+                    $ecStmt->execute([$ecNumber, $userId]);
+                    if ($ecStmt->fetchColumn()) {
+                        $error = 'This EC Number is already assigned to another user.';
+                    }
+                }
+                if ($error === null) {
+                    try {
+                        $stmt = $db->prepare("UPDATE users SET role_id = ?, ec_number = ?, is_active = ? WHERE user_id = ?");
+                        $stmt->execute([$roleId, $ecNumber, $isActive, $userId]);
+                        logAudit('user_updated_by_sysadmin', 'users', $userId, null, ['role_id' => $roleId, 'role_name' => $roleName, 'ec_number' => $ecNumber, 'is_active' => $isActive]);
+                        redirect('/admin/users.php', 'User updated.', 'success');
+                    } catch (Throwable $e) {
+                        if ((int)$e->getCode() === 23000) {
+                            $error = 'This EC Number is already assigned to another user.';
+                        } else {
+                            throw $e;
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 $roles = $db->query("SELECT role_id, role_name FROM roles ORDER BY role_id")->fetchAll();
 $users = $db->query("
-    SELECT u.user_id, u.email, u.first_name, u.last_name, u.phone, u.is_active, u.role_id, r.role_name, u.created_at
+    SELECT u.user_id, u.email, u.first_name, u.last_name, u.phone, u.ec_number, u.is_active, u.role_id, r.role_name, u.created_at
     FROM users u
     JOIN roles r ON u.role_id = r.role_id
     ORDER BY u.created_at DESC
@@ -127,13 +160,18 @@ require_once BASE_PATH . '/includes/header.php';
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label small fw-bold">Role</label>
-                <select class="form-select form-select-sm" name="role_id" required>
+                <select class="form-select form-select-sm js-role-select" name="role_id" required>
                     <?php foreach ($roles as $r): ?>
                         <option value="<?php echo (int)$r['role_id']; ?>">
                             <?php echo escape($r['role_name']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold">EC Number</label>
+                <input type="text" class="form-control form-control-sm js-ec-number" name="ec_number" maxlength="50" placeholder="Required for HR/Management">
+                <div class="form-text">Required when role is HR or Management.</div>
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label small fw-bold">Password</label>
@@ -160,6 +198,7 @@ require_once BASE_PATH . '/includes/header.php';
                     <tr>
                         <th>User</th>
                         <th>Email</th>
+                        <th>EC Number</th>
                         <th>Role</th>
                         <th>Status</th>
                         <th class="text-end">Action</th>
@@ -173,6 +212,7 @@ require_once BASE_PATH . '/includes/header.php';
                                 <div class="small text-muted"><?php echo escape(formatDateDisplay($u['created_at'])); ?></div>
                             </td>
                             <td class="text-muted"><?php echo escape($u['email']); ?></td>
+                            <td class="text-muted"><?php echo escape(trim((string)($u['ec_number'] ?? '')) !== '' ? (string)$u['ec_number'] : '—'); ?></td>
                             <td>
                                 <?php
                                 $roleBadges = ['Candidate' => 'status-under-review', 'HR' => 'status-shortlisted', 'Management' => 'status-interview', 'SysAdmin' => 'status-offer'];
@@ -194,7 +234,7 @@ require_once BASE_PATH . '/includes/header.php';
                             </td>
                         </tr>
                         <tr class="collapse" id="e<?php echo (int)$u['user_id']; ?>">
-                            <td colspan="5" style="background: #f3f3f4; border-radius: 12px;">
+                            <td colspan="6" style="background: #f3f3f4; border-radius: 12px;">
                                 <div class="p-2">
                                     <form method="post" class="row g-2 align-items-end mb-3">
                                         <input type="hidden" name="csrf_token" value="<?php echo escape($csrf); ?>">
@@ -203,13 +243,17 @@ require_once BASE_PATH . '/includes/header.php';
 
                                         <div class="col-12 col-md-4">
                                             <label class="form-label small fw-bold">Role</label>
-                                            <select class="form-select form-select-sm" name="role_id">
+                                            <select class="form-select form-select-sm js-role-select" name="role_id">
                                                 <?php foreach ($roles as $r): ?>
                                                     <option value="<?php echo (int)$r['role_id']; ?>" <?php echo (int)$u['role_id'] === (int)$r['role_id'] ? 'selected' : ''; ?>>
                                                         <?php echo escape($r['role_name']); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small fw-bold">EC Number</label>
+                                            <input type="text" class="form-control form-control-sm js-ec-number" name="ec_number" maxlength="50" value="<?php echo escape((string)($u['ec_number'] ?? '')); ?>" placeholder="Required for HR/Management">
                                         </div>
                                         <div class="col-12 col-md-3">
                                             <label class="form-label small fw-bold">Account</label>
@@ -218,7 +262,7 @@ require_once BASE_PATH . '/includes/header.php';
                                                 <label class="form-check-label small" for="a<?php echo (int)$u['user_id']; ?>">Enabled</label>
                                             </div>
                                         </div>
-                                        <div class="col-12 col-md-5 text-md-end">
+                                        <div class="col-12 col-md-1 text-md-end">
                                             <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i> Save Role</button>
                                         </div>
                                     </form>
@@ -270,3 +314,31 @@ require_once BASE_PATH . '/includes/header.php';
 </div>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
+<script>
+(function () {
+    function roleNeedsEcNumber(roleLabel) {
+        var v = (roleLabel || '').toLowerCase();
+        return v === 'hr' || v === 'management';
+    }
+    function syncEcRequired(form) {
+        var roleSelect = form.querySelector('.js-role-select');
+        var ecInput = form.querySelector('.js-ec-number');
+        if (!roleSelect || !ecInput) return;
+        var selectedText = roleSelect.options[roleSelect.selectedIndex] ? roleSelect.options[roleSelect.selectedIndex].text : '';
+        var required = roleNeedsEcNumber(selectedText);
+        ecInput.required = required;
+        ecInput.disabled = !required;
+        if (!required) {
+            ecInput.value = '';
+        }
+        ecInput.setAttribute('aria-required', required ? 'true' : 'false');
+    }
+    document.querySelectorAll('form').forEach(function (form) {
+        var roleSelect = form.querySelector('.js-role-select');
+        var ecInput = form.querySelector('.js-ec-number');
+        if (!roleSelect || !ecInput) return;
+        syncEcRequired(form);
+        roleSelect.addEventListener('change', function () { syncEcRequired(form); });
+    });
+})();
+</script>

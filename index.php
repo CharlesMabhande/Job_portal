@@ -460,7 +460,7 @@ function typeBadgeClass($type) {
         <p>Join our University and make a difference in your community today.</p>
         <div class="d-flex gap-3 justify-content-center flex-wrap" style="position:relative;z-index:2;">
             <?php if (!isset($_SESSION['user_id'])): ?>
-                <a href="<?php echo BASE_URL; ?>/register.php" class="btn-hero-primary">
+                <a href="<?php echo BASE_URL; ?>/user-guide.php?next=register" class="btn-hero-primary">
                     <i class="fa-solid fa-user-plus"></i> Apply Now
                 </a>
                 <a href="<?php echo BASE_URL; ?>/login.php" class="btn-hero-outline">

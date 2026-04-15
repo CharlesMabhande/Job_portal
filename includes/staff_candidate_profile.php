@@ -116,6 +116,7 @@ function staffBuildCandidateProfileHtml(array $profile, array $references, strin
     $html .= $row('Age (from date of birth)', escape($ageLabel));
     $gLabel = trim((string)($profile['gender'] ?? ''));
     $html .= $row('Gender', escape($gLabel !== '' ? $gLabel : '—'));
+    $html .= $row('National ID Number', escape(trim((string)($profile['national_id_number'] ?? '')) !== '' ? (string)$profile['national_id_number'] : '—'));
     $html .= $row('Country', escape(trim((string)($profile['country'] ?? '')) !== '' ? (string)$profile['country'] : '—'));
     $html .= $row('Street address', $addrHtml);
     $html .= $row('City', escape(trim((string)($profile['city'] ?? '')) !== '' ? (string)$profile['city'] : '—'));

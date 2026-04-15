@@ -6,8 +6,13 @@
 /**
  * Register new user
  */
-function registerUser($email, $password, $firstName, $lastName, $phone = null, $roleId = 1) {
+function registerUser($email, $password, $firstName, $lastName, $phone = null, $roleId = 1, $gender = null, $nationalIdNumber = null, $dateOfBirth = null) {
     $db = getDBConnection();
+    $gender = normalizeCandidateGender($gender);
+    $nationalIdNumber = trim((string)$nationalIdNumber);
+    $nationalIdNumber = ($nationalIdNumber === '') ? null : $nationalIdNumber;
+    $dateOfBirth = trim((string)$dateOfBirth);
+    $dateOfBirth = ($dateOfBirth === '') ? null : $dateOfBirth;
     
     // Check if email exists
     $stmt = $db->prepare("SELECT user_id FROM users WHERE email = ?");
@@ -32,8 +37,28 @@ function registerUser($email, $password, $firstName, $lastName, $phone = null, $
         
         // Create candidate profile if role is Candidate
         if ($roleId == 1) {
-            $stmt = $db->prepare("INSERT INTO candidates (user_id) VALUES (?)");
-            $stmt->execute([$userId]);
+            if ($gender === null || $nationalIdNumber === null || $dateOfBirth === null) {
+                throw new RuntimeException('Gender, National ID Number, and Date of Birth are required for candidate registration.');
+            }
+            $dobObj = DateTime::createFromFormat('Y-m-d', $dateOfBirth);
+            $dobValid = $dobObj && $dobObj->format('Y-m-d') === $dateOfBirth;
+            if (!$dobValid) {
+                throw new RuntimeException('Date of Birth must be a valid date.');
+            }
+            $hasNationalIdColumn = false;
+            try {
+                $colStmt = $db->query("SHOW COLUMNS FROM candidates LIKE 'national_id_number'");
+                $hasNationalIdColumn = (bool)($colStmt && $colStmt->fetch());
+            } catch (Throwable $e) {
+                $hasNationalIdColumn = false;
+            }
+            if ($hasNationalIdColumn) {
+                $stmt = $db->prepare("INSERT INTO candidates (user_id, date_of_birth, gender, national_id_number) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$userId, $dateOfBirth, $gender, $nationalIdNumber]);
+            } else {
+                $stmt = $db->prepare("INSERT INTO candidates (user_id, date_of_birth, gender) VALUES (?, ?, ?)");
+                $stmt->execute([$userId, $dateOfBirth, $gender]);
+            }
         }
         
         $db->commit();
@@ -44,6 +69,9 @@ function registerUser($email, $password, $firstName, $lastName, $phone = null, $
     } catch (Exception $e) {
         $db->rollBack();
         error_log("Registration error: " . $e->getMessage());
+        if ($e instanceof RuntimeException) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
         return ['success' => false, 'message' => 'Registration failed'];
     }
 }
@@ -143,7 +171,7 @@ function adminResetUserPassword($targetUserId, $newPassword) {
  *
  * @return array{success:bool,message?:string,user_id?:int}
  */
-function adminCreateUser(string $email, string $password, string $firstName, string $lastName, ?string $phone, int $roleId, int $actorUserId): array {
+function adminCreateUser(string $email, string $password, string $firstName, string $lastName, ?string $phone, int $roleId, ?string $ecNumber, int $actorUserId): array {
     $db = getDBConnection();
 
     $email = trim(strtolower($email));
@@ -151,6 +179,8 @@ function adminCreateUser(string $email, string $password, string $firstName, str
     $lastName = trim($lastName);
     $phone = $phone !== null ? trim($phone) : null;
     $phone = ($phone === '') ? null : $phone;
+    $ecNumber = $ecNumber !== null ? trim($ecNumber) : null;
+    $ecNumber = ($ecNumber === '') ? null : $ecNumber;
 
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return ['success' => false, 'message' => 'Enter a valid email address.'];
@@ -171,6 +201,23 @@ function adminCreateUser(string $email, string $password, string $firstName, str
     if ($roleName === '') {
         return ['success' => false, 'message' => 'Selected role does not exist.'];
     }
+    $requiresEcNumber = in_array($roleName, ['HR', 'Management'], true);
+    if ($requiresEcNumber && $ecNumber === null) {
+        return ['success' => false, 'message' => 'EC Number is required for HR and Management users.'];
+    }
+    if (!$requiresEcNumber && $ecNumber !== null) {
+        return ['success' => false, 'message' => 'EC Number is only allowed for HR and Management users.'];
+    }
+    if ($ecNumber !== null && strlen($ecNumber) > 50) {
+        return ['success' => false, 'message' => 'EC Number must be at most 50 characters.'];
+    }
+    if ($ecNumber !== null) {
+        $stmt = $db->prepare("SELECT user_id FROM users WHERE ec_number = ? LIMIT 1");
+        $stmt->execute([$ecNumber]);
+        if ($stmt->fetchColumn()) {
+            return ['success' => false, 'message' => 'This EC Number is already assigned to another user.'];
+        }
+    }
 
     $stmt = $db->prepare("SELECT user_id FROM users WHERE email = ?");
     $stmt->execute([$email]);
@@ -185,10 +232,10 @@ function adminCreateUser(string $email, string $password, string $firstName, str
         $verificationToken = generateToken();
 
         $stmt = $db->prepare("
-            INSERT INTO users (email, password, role_id, first_name, last_name, phone, verification_token, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO users (email, password, role_id, first_name, last_name, phone, ec_number, verification_token, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
         ");
-        $stmt->execute([$email, $hashedPassword, $roleId, $firstName, $lastName, $phone, $verificationToken]);
+        $stmt->execute([$email, $hashedPassword, $roleId, $firstName, $lastName, $phone, $ecNumber, $verificationToken]);
         $newUserId = (int)$db->lastInsertId();
 
         if ($roleName === 'Candidate') {
@@ -208,6 +255,7 @@ function adminCreateUser(string $email, string $password, string $firstName, str
         'created_by' => $actorUserId,
         'role_id' => $roleId,
         'role_name' => $roleName,
+        'ec_number' => $ecNumber,
     ]);
 
     return ['success' => true, 'user_id' => $newUserId];
@@ -494,7 +542,7 @@ function updateCandidateProfile($userId, $data) {
     $fields = [];
     $values = [];
     
-    $allowedFields = ['date_of_birth', 'gender', 'address', 'city', 'state', 'country', 'postal_code',
+    $allowedFields = ['date_of_birth', 'gender', 'address', 'city', 'state', 'country', 'postal_code', 'national_id_number',
                       'cover_letter_template', 'skills', 'education', 'experience',
                       'professional_qualifications', 'o_level_qualifications', 'a_level_qualifications', 'other_certifications'];
     
